@@ -1,0 +1,114 @@
+<div class="scale-container">
+  <!-- Panel de Indicador de Peso (Izquierda) -->
+  <div class="weight-panel">
+    <div class="indicator-header">
+      <span class="indicator-label">PESO ACTUAL</span>
+    </div>
+    <div class="indicator-display">
+      <span class="weight-value">{{ currentWeight | number:'1.0-0' }}</span>
+      <span class="weight-unit">{{ unit }}</span>
+    </div>
+    <div class="indicator-status">
+      <span class="status-badge stable">ESTABLE</span>
+      <span class="status-badge zero">CERO</span>
+    </div>
+  </div>
+
+  <!-- Panel de Información Operativa (Derecha) -->
+  <div class="operational-panel">
+    <div class="info-card gross">
+      <div class="card-label">BRUTO</div>
+      <div class="card-value">{{ gross | number:'1.0-0' }} <small>{{ unit }}</small></div>
+    </div>
+    
+    <div class="info-card tare">
+      <div class="card-label">TARA</div>
+      <div class="card-value">{{ tare | number:'1.0-0' }} <small>{{ unit }}</small></div>
+    </div>
+    
+    <div class="info-card net">
+      <div class="card-label">NETO</div>
+      <div class="card-value highlight">{{ net | number:'1.0-0' }} <small>{{ unit }}</small></div>
+    </div>
+
+    <!-- Botones de Acción Operativa -->
+    <div class="action-grid">
+      <button class="btn btn-primary" (click)="onTarar()">TARAR</button>
+      <button class="btn btn-secondary" (click)="onCero()">CERO</button>
+      <button class="btn btn-success" (click)="onImprimir()">IMPRIMIR</button>
+      <button class="btn btn-danger" (click)="onCancelar()">CANCELAR</button>
+    </div>
+  </div>
+
+  <!-- Tabla de Transacciones Recientes (Abajo) -->
+  <div class="transactions-panel">
+    <div class="panel-header">
+      <h3>Últimas Transacciones</h3>
+      <button class="btn-refresh" (click)="cargarDatos()">🔄 Actualizar</button>
+    </div>
+    
+    <div class="table-container">
+      <table mat-table [dataSource]="recentTransactions" class="mat-elevation-z0">
+        <!-- Definición de Columnas para mat-table -->
+        <ng-container matColumnDef="codigoEntrada">
+          <th mat-header-cell *mat-header-cellDef> Folio </th>
+          <td mat-cell *mat-cellDef="let t"> <strong>#{{ t.codigoEntrada || t.id }}</strong> </td>
+        </ng-container>
+
+        <ng-container matColumnDef="cliente">
+          <th mat-header-cell *mat-header-cellDef> Cliente </th>
+          <td mat-cell *mat-cellDef="let t"> {{ t.cliente }} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="nombre_chofer">
+          <th mat-header-cell *mat-header-cellDef> Chofer </th>
+          <td mat-cell *mat-cellDef="let t"> {{ t.nombre_chofer }} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="tara">
+          <th mat-header-cell *mat-header-cellDef> Tara (kg) </th>
+          <td mat-cell *mat-cellDef="let t"> {{ t.tara | number }} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="bruto">
+          <th mat-header-cell *mat-header-cellDef> Bruto (kg) </th>
+          <td mat-cell *mat-cellDef="let t"> {{ (t.bruto || 0) | number }} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="neto">
+          <th mat-header-cell *mat-header-cellDef> Neto (kg) </th>
+          <td mat-cell *mat-cellDef="let t"> <strong class="text-success">{{ (t.neto || 0) | number }}</strong> </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *mat-header-cellDef> Fecha </th>
+          <td mat-cell *mat-cellDef="let t"> {{ t.fecha_entrada | date:'short' }} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *mat-header-cellDef> Estado </th>
+          <td mat-cell *mat-cellDef="let t">
+            <span class="status-indicator" [class.completed]="t.activo === 0" [class.pending]="t.activo === 1">
+              {{ t.activo === 1 ? 'DENTRO' : 'SALIDA' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *mat-header-cellDef> Acciones </th>
+          <td mat-cell *mat-cellDef="let t">
+            <button class="btn-icon" (click)="viewTransaction(t)" title="Ver Detalle">👁️</button>
+            <button class="btn-icon" (click)="printTransaction(t)" title="Reimprimir">🖨️</button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *mat-header-rowDef="['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones']"></tr>
+        <tr mat-row *mat-rowDef="let row; columns: ['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones'];"></tr>
+      </table>
+
+      <div class="no-data" *ngIf="recentTransactions.length === 0">
+        No hay transacciones registradas.
+      </div>
+    </div>
+  </div>
+</div>

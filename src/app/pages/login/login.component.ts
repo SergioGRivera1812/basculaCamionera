@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -12,7 +13,7 @@ loginForm: FormGroup;
   isLoading: boolean = false;
   errorMessage: string | null = null;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private router: Router) {
     // Inicialización del formulario con el FormBuilder
     this.loginForm = this.fb.group({
       email: [
@@ -46,8 +47,9 @@ loginForm: FormGroup;
       setTimeout(() => {
         this.isLoading = false;
         // Simular un login exitoso
-        if (email === 'test@example.com' && password === 'password') {
+        if (email === 'admin@admin.com' && password === 'password') {
           console.log('Login exitoso. Redirigir.');
+          this.router.navigate(['/scale']);
           // Aquí iría la lógica de autenticación y navegación
         } else {
           // Simular un error de credenciales
