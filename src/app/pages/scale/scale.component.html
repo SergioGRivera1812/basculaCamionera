@@ -39,71 +39,81 @@
       <button class="btn btn-danger" (click)="onCancelar()">CANCELAR</button>
     </div>
   </div>
-
-  <!-- Tabla de Transacciones Recientes (Abajo) -->
-  <div class="transactions-panel">
-    <div class="panel-header">
+<!-- Tabla de Transacciones Recientes (Abajo) -->
+<div class="transactions-panel">
+  <div class="panel-header">
+    <div class="header-left">
       <h3>Últimas Transacciones</h3>
-      <button class="btn-refresh" (click)="cargarDatos()">🔄 Actualizar</button>
+      <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+        <mat-label>Filtrar historial</mat-label>
+        <input matInput (keyup)="applyFilter($event)" placeholder="Ej: Folio, Cliente, Chofer o Placa" #input>
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
     </div>
-    
-    <div class="table-container">
-      <table mat-table [dataSource]="recentTransactions" class="mat-elevation-z0">
+    <button mat-flat-button color="accent" class="btn-refresh" (click)="cargarDatos()">
+      <mat-icon>refresh</mat-icon> Actualizar
+    </button>
+  </div>
+
+  <div class="table-container">
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z0">
+...
         <!-- Definición de Columnas para mat-table -->
         <ng-container matColumnDef="codigoEntrada">
-          <th mat-header-cell *mat-header-cellDef> Folio </th>
-          <td mat-cell *mat-cellDef="let t"> <strong>#{{ t.codigoEntrada || t.id }}</strong> </td>
+          <th mat-header-cell *matHeaderCellDef> Folio </th>
+          <td mat-cell *matCellDef="let t"> <strong>#{{ t.folio  }}</strong> </td>
         </ng-container>
 
         <ng-container matColumnDef="cliente">
-          <th mat-header-cell *mat-header-cellDef> Cliente </th>
-          <td mat-cell *mat-cellDef="let t"> {{ t.cliente }} </td>
+          <th mat-header-cell *matHeaderCellDef> Cliente </th>
+          <td mat-cell *matCellDef="let t"> {{ t.cliente }} </td>
         </ng-container>
 
         <ng-container matColumnDef="nombre_chofer">
-          <th mat-header-cell *mat-header-cellDef> Chofer </th>
-          <td mat-cell *mat-cellDef="let t"> {{ t.nombre_chofer }} </td>
+          <th mat-header-cell *matHeaderCellDef> Chofer </th>
+          <td mat-cell *matCellDef="let t"> {{ t.chofer }} </td>
         </ng-container>
 
         <ng-container matColumnDef="tara">
-          <th mat-header-cell *mat-header-cellDef> Tara (kg) </th>
-          <td mat-cell *mat-cellDef="let t"> {{ t.tara | number }} </td>
+          <th mat-header-cell *matHeaderCellDef> Tara (kg) </th>
+          <td mat-cell *matCellDef="let t"> {{ t.tara | number }} </td>
         </ng-container>
 
         <ng-container matColumnDef="bruto">
-          <th mat-header-cell *mat-header-cellDef> Bruto (kg) </th>
-          <td mat-cell *mat-cellDef="let t"> {{ (t.bruto || 0) | number }} </td>
+          <th mat-header-cell *matHeaderCellDef> Bruto (kg) </th>
+          <td mat-cell *matCellDef="let t"> {{ (t.bruto || 0) | number }} </td>
         </ng-container>
 
         <ng-container matColumnDef="neto">
-          <th mat-header-cell *mat-header-cellDef> Neto (kg) </th>
-          <td mat-cell *mat-cellDef="let t"> <strong class="text-success">{{ (t.neto || 0) | number }}</strong> </td>
+          <th mat-header-cell *matHeaderCellDef> Neto (kg) </th>
+          <td mat-cell *matCellDef="let t"> <strong class="text-success">{{ (t.neto || 0) | number }}</strong> </td>
         </ng-container>
 
         <ng-container matColumnDef="fecha">
-          <th mat-header-cell *mat-header-cellDef> Fecha </th>
-          <td mat-cell *mat-cellDef="let t"> {{ t.fecha_entrada | date:'short' }} </td>
+          <th mat-header-cell *matHeaderCellDef> Fecha </th>
+          <td mat-cell *matCellDef="let t"> {{ t.fecha | date:'short' }} </td>
         </ng-container>
 
         <ng-container matColumnDef="estado">
-          <th mat-header-cell *mat-header-cellDef> Estado </th>
-          <td mat-cell *mat-cellDef="let t">
-            <span class="status-indicator" [class.completed]="t.activo === 0" [class.pending]="t.activo === 1">
-              {{ t.activo === 1 ? 'DENTRO' : 'SALIDA' }}
+          <th mat-header-cell *matHeaderCellDef> Estado </th>
+          <td mat-cell *matCellDef="let t">
+            <span class="status-indicator" [class.completed]="t.estado === 'completado'" [class.pending]="t.estado === 'pendiente'">
+              {{ t.estado === 'completado' ? 'COMPLETADO' : 'SIN REGISTRAR SALIDA' }}
             </span>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="acciones">
-          <th mat-header-cell *mat-header-cellDef> Acciones </th>
-          <td mat-cell *mat-cellDef="let t">
+          <th mat-header-cell *matHeaderCellDef> Acciones </th>
+          <td mat-cell *matCellDef="let t">
+            <button class="btn-icon finish" *ngIf="t.estado === 'pendiente'" (click)="onFinalizarSalida(t)" title="Completar Salida">✅</button>
             <button class="btn-icon" (click)="viewTransaction(t)" title="Ver Detalle">👁️</button>
             <button class="btn-icon" (click)="printTransaction(t)" title="Reimprimir">🖨️</button>
           </td>
         </ng-container>
 
-        <tr mat-header-row *mat-header-rowDef="['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones']"></tr>
-        <tr mat-row *mat-rowDef="let row; columns: ['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones'];"></tr>
+        <tr mat-header-row *matHeaderRowDef="['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones'];"></tr>
       </table>
 
       <div class="no-data" *ngIf="recentTransactions.length === 0">

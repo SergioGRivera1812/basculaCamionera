@@ -19,6 +19,10 @@ export class ChoferesService {
     return this.http.post<Chofer>(this.API_URL, chofer);
   }
 
+  updateChofer(id: number, chofer: Chofer): Observable<Chofer> {
+    return this.http.put<Chofer>(`${this.API_URL}/${id}`, chofer);
+  }
+
   deleteChofer(id: number): Observable<any> {
     return this.http.delete(`${this.API_URL}/${id}`);
   }

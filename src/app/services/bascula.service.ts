@@ -8,11 +8,10 @@ import { EntradaBascula, SalidaBascula } from '../models/database.models';
 })
 export class BasculaService {
   private readonly API_URL = 'http://localhost:3000/api';
-
   constructor(private http: HttpClient) { }
 
   getEntradasActivas(): Observable<EntradaBascula[]> {
-    return this.http.get<EntradaBascula[]>(`${this.API_URL}/entrada/activas`);
+    return this.http.get<EntradaBascula[]>(`${this.API_URL}/entrada/activos`);
   }
 
   registrarEntrada(entrada: EntradaBascula): Observable<EntradaBascula> {
@@ -24,6 +23,6 @@ export class BasculaService {
   }
 
   getHistorialCompleto(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.API_URL}/entrada/historial`);
+    return this.http.get<any[]>(`${this.API_URL}/transacciones`);
   }
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTableDataSource } from '@angular/material/table';
 import { WeighingFormDialogComponent } from './components/weighing-form-dialog/weighing-form-dialog.component';
 import { TransactionDetailsDialogComponent } from './components/transaction-details-dialog/transaction-details-dialog.component';
 import { BasculaService } from '../../services/bascula.service';
@@ -21,6 +22,7 @@ export class ScaleComponent implements OnInit {
   // Historial de la tabla
   recentTransactions: any[] = [];
   entradasActivas: EntradaBascula[] = [];
+  dataSource = new MatTableDataSource<any>([]);
 
   constructor(
     private dialog: MatDialog,
@@ -28,7 +30,7 @@ export class ScaleComponent implements OnInit {
     private basculaService: BasculaService
   ) {
     // Simulación de peso en tiempo real
-    this.currentWeight = 12540;
+    this.currentWeight = 24503;
     this.gross = 12540;
   }
 
@@ -38,7 +40,21 @@ export class ScaleComponent implements OnInit {
 
   cargarDatos(): void {
     this.basculaService.getEntradasActivas().subscribe(data => this.entradasActivas = data);
-    this.basculaService.getHistorialCompleto().subscribe(data => this.recentTransactions = data);
+    this.basculaService.getHistorialCompleto().subscribe(data => {
+      this.recentTransactions = data;
+      this.dataSource.data = data;
+      
+      // Personalizar el filtro para que busque en todos los campos visibles
+      this.dataSource.filterPredicate = (data: any, filter: string) => {
+        const searchStr = `${data.folio} ${data.cliente} ${data.chofer} ${data.placa || ''}`.toLowerCase();
+        return searchStr.includes(filter);
+      };
+    });
+  }
+
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 
   onTarar(): void {
@@ -56,38 +72,71 @@ export class ScaleComponent implements OnInit {
   }
 
   onImprimir(): void {
-    // Si hay una entrada activa para este camión, es una SALIDA
+    if (this.currentWeight <= 0) {
+      this.showNotification('No hay peso detectado en la báscula');
+      return;
+    }
+
+    const isSalida = this.tare > 0;
+    
     const dialogRef = this.dialog.open(WeighingFormDialogComponent, {
       width: '500px',
       data: { 
         weight: this.currentWeight, 
-        type: this.tare > 0 ? 'salida' : 'entrada', // Basado en si se ha tarado
+        type: isSalida ? 'salida' : 'entrada',
         tare: this.tare,
-        // Enviar lista de entradas activas por si es salida
         entradasActivas: this.entradasActivas 
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        if (result.type === 'entrada') {
-          this.guardarEntrada(result);
-        } else {
+        if (isSalida) {
           this.guardarSalida(result);
+        } else {
+          this.guardarEntrada(result);
         }
       }
     });
   }
 
+  onFinalizarSalida(transaction: any): void {
+    if (this.currentWeight <= 0) {
+      this.showNotification('Debe haber un camión en la báscula para registrar la salida');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(WeighingFormDialogComponent, {
+      width: '500px',
+      data: { 
+        weight: this.currentWeight, 
+        type: 'salida',
+        tare: transaction.tara,
+        plate: transaction.placa,
+        driver: transaction.chofer,
+        cliente: transaction.cliente,
+        product_id: transaction.id_material,
+        codigoEntrada: transaction.codigoEntrada || transaction.folio
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.guardarSalida(result);
+      }
+    });
+  }
+
   onCancelar(): void {
-    this.showNotification('Operación cancelada');
+    this.onCero();
+    this.showNotification('Operación cancelada y báscula reseteada');
   }
 
   private guardarEntrada(data: any): void {
     const nuevaEntrada: EntradaBascula = {
-      codigoEntrada: Math.floor(100000 + Math.random() * 900000), // Generación de código único
+      codigoEntrada: data.codigoEntrada || Math.floor(100000 + Math.random() * 900000),
       nombre_chofer: data.driver,
-      id_material: data.product_id || 1, // Por defecto material 1
+      id_material: data.product_id,
       cliente: data.cliente || 'CLIENTE MOSTRADOR',
       tara: data.weight,
       activo: 1
@@ -95,27 +144,36 @@ export class ScaleComponent implements OnInit {
 
     this.basculaService.registrarEntrada(nuevaEntrada).subscribe({
       next: () => {
-        this.showNotification(`Entrada registrada exitosamente`);
+        this.showNotification(`Ticket de Entrada #${nuevaEntrada.codigoEntrada} guardado`);
+        this.onCero();
         this.cargarDatos();
       },
-      error: (err) => this.showNotification('Error al registrar entrada: ' + err.message)
+      error: (err) => this.showNotification('Error al registrar: ' + err.message)
     });
   }
 
   private guardarSalida(data: any): void {
+    const codigo = data.codigoEntrada || (this.entradasActivas.length > 0 ? this.entradasActivas[0].codigoEntrada : null);
+
+    if (!codigo) {
+      this.showNotification('Error: No se encontró una entrada previa para este ticket');
+      return;
+    }
+
     const nuevaSalida: SalidaBascula = {
-      codigoEntrada: data.codigoEntrada,
+      codigoEntrada: codigo,
       bruto: data.weight,
-      neto: Math.abs(data.weight - data.tare),
+      neto: Math.abs(data.weight - this.tare),
       activo: 0
     };
 
     this.basculaService.registrarSalida(nuevaSalida).subscribe({
       next: () => {
-        this.showNotification(`Salida completada exitosamente`);
+        this.showNotification(`Ticket de Salida #${codigo} completado exitosamente`);
+        this.onCero();
         this.cargarDatos();
       },
-      error: (err) => this.showNotification('Error al registrar salida: ' + err.message)
+      error: (err) => this.showNotification('Error al completar salida: ' + err.message)
     });
   }
 
@@ -127,7 +185,7 @@ export class ScaleComponent implements OnInit {
   }
 
   printTransaction(t: any): void {
-    this.showNotification(`Reimprimiendo ticket #${t.codigoEntrada || t.id}...`);
+    this.showNotification(`Reimprimiendo ticket #${t.codigoEntrada || t.folio}...`);
   }
 
   private showNotification(message: string): void {
