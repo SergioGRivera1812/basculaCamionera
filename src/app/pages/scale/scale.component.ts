@@ -11,7 +11,7 @@ import { WeighingFormDialogComponent } from './components/weighing-form-dialog/w
 import { TransactionDetailsDialogComponent } from './components/transaction-details-dialog/transaction-details-dialog.component';
 import { BasculaService } from '../../services/bascula.service';
 import { NotificationService } from '../../services/notification.service';
-import { EntradaBascula, SalidaBascula, Transaccion } from '../../models/database.models';
+import { EntradaBascula, CrearEntrada, CrearSalida, Transaccion } from '../../models/database.models';
 
 @Component({
   selector: 'app-scale',
@@ -171,13 +171,12 @@ export class ScaleComponent implements OnInit {
       return;
     }
 
-    const nuevaEntrada: EntradaBascula = {
-      codigoEntrada: data.codigoEntrada || Math.floor(100000 + Math.random() * 900000),
+    const nuevaEntrada: CrearEntrada = {
+      codigoEntrada: Number(data.codigoEntrada) || Math.floor(100000 + Math.random() * 900000),
       nombre_chofer: data.driver,
       id_material: data.product_id,
       cliente: data.cliente || 'CLIENTE MOSTRADOR',
       tara,
-      activo: 1
     };
 
     this.basculaService
@@ -189,47 +188,44 @@ export class ScaleComponent implements OnInit {
           this.onCero();
           this.cargarDatos();
         },
-        error: (err) => this.notify.error('Error al registrar la entrada', err.message),
+        error: (err) => this.notify.error('Error al registrar la entrada', err.error?.error || err.message),
       });
   }
 
   private guardarSalida(data: any): void {
-    const codigo = data.codigoEntrada || (this.entradasActivas.length > 0 ? this.entradasActivas[0].codigoEntrada : null);
+    const codigo = Number(
+      data.codigoEntrada || (this.entradasActivas.length > 0 ? this.entradasActivas[0].codigoEntrada : null),
+    );
 
-    if (!codigo) {
+    if (!Number.isFinite(codigo) || codigo <= 0) {
       this.notify.error('No se encontró una entrada previa para este ticket');
       return;
     }
 
-    // La tara correcta es la de la entrada original (data.tare). Solo si no
-    // viene, caemos a la tara del componente. Forzamos todo a número.
-    const tara = Number(data.tare ?? this.tare) || 0;
     const bruto = Number(data.weight);
-    const neto = Math.abs(bruto - tara);
 
-    // El backend no valida la entrada: nos aseguramos de NO enviarle NaN.
-    if (!Number.isFinite(bruto) || !Number.isFinite(neto)) {
-      this.notify.error('Peso inválido', 'No se pudo calcular el bruto/neto de la salida.');
+    // Validación que el backend NO hace: bruto debe ser numérico.
+    if (!Number.isFinite(bruto)) {
+      this.notify.error('Peso inválido', 'El peso bruto de la salida no es válido.');
       return;
     }
 
-    const nuevaSalida: SalidaBascula = {
-      codigoEntrada: codigo,
-      bruto,
-      neto,
-      activo: 0
-    };
+    // El backend calcula el neto (bruto - tara de la entrada) y cierra la entrada.
+    // Por contrato, solo se envían codigoEntrada y bruto.
+    const nuevaSalida: CrearSalida = { codigoEntrada: codigo, bruto };
 
     this.basculaService
       .registrarSalida(nuevaSalida)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
-          this.notify.success('Ticket de Salida completado', `Folio #${codigo}`);
+        next: (res) => {
+          const detalle =
+            res?.neto != null ? `Folio #${codigo} · Neto ${res.neto.toLocaleString()} kg` : `Folio #${codigo}`;
+          this.notify.success('Ticket de Salida completado', detalle);
           this.onCero();
           this.cargarDatos();
         },
-        error: (err) => this.notify.error('Error al completar la salida', err.message),
+        error: (err) => this.notify.error('Error al completar la salida', err.error?.error || err.message),
       });
   }
 

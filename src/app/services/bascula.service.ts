@@ -1,7 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { EntradaBascula, SalidaBascula, Transaccion } from '../models/database.models';
+import {
+  EntradaBascula,
+  CrearEntrada,
+  CrearSalida,
+  SalidaResponse,
+  Transaccion,
+} from '../models/database.models';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -17,12 +23,12 @@ export class BasculaService {
     return this.http.get<EntradaBascula[]>(`${this.API_URL}/entrada/activos/lista`);
   }
 
-  registrarEntrada(entrada: EntradaBascula): Observable<EntradaBascula> {
-    return this.http.post<EntradaBascula>(`${this.API_URL}/entrada`, entrada);
+  registrarEntrada(entrada: CrearEntrada): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.API_URL}/entrada`, entrada);
   }
 
-  registrarSalida(salida: SalidaBascula): Observable<SalidaBascula> {
-    return this.http.post<SalidaBascula>(`${this.API_URL}/salida`, salida);
+  registrarSalida(salida: CrearSalida): Observable<SalidaResponse> {
+    return this.http.post<SalidaResponse>(`${this.API_URL}/salida`, salida);
   }
 
   getHistorialCompleto(): Observable<Transaccion[]> {

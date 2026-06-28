@@ -47,6 +47,27 @@ export interface SalidaBascula {
   activo: number;
 }
 
+/** Body de POST /api/entrada (el backend fija `activo = 1`). */
+export interface CrearEntrada {
+  codigoEntrada: number;
+  nombre_chofer: string;
+  id_material: number;
+  cliente: string;
+  tara: number;
+}
+
+/** Body de POST /api/salida. El backend calcula el `neto` y cierra la entrada. */
+export interface CrearSalida {
+  codigoEntrada: number;
+  bruto: number;
+}
+
+/** Respuesta de POST /api/salida: el backend devuelve el neto calculado. */
+export interface SalidaResponse {
+  message: string;
+  neto: number;
+}
+
 /** Fila del historial de transacciones que devuelve el backend (/transacciones). */
 export interface Transaccion {
   id?: number;
