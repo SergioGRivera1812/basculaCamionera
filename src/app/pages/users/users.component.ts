@@ -21,7 +21,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { NotificationService } from '../../services/notification.service';
 import { UsuariosService } from '../../services/usuarios.service';
 import { Usuario } from '../../models/database.models';
 import { UserDialogComponent } from './components/user-dialog/user-dialog.component';
@@ -42,7 +42,6 @@ import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-
     MatInputModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    MatSnackBarModule,
     MatDialogModule,
   ],
   templateUrl: './users.component.html',
@@ -51,7 +50,7 @@ import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-
 })
 export class UsersComponent implements OnInit, AfterViewInit {
   private readonly usuariosService = inject(UsuariosService);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly notify = inject(NotificationService);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -92,7 +91,7 @@ export class UsersComponent implements OnInit, AfterViewInit {
         error: () => {
           this.isLoading = false;
           this.cdr.markForCheck();
-          this.snackBar.open('Error al cargar usuarios', 'Cerrar', { duration: 2000 });
+          this.notify.error('Error al cargar usuarios');
         },
       });
   }
@@ -116,10 +115,10 @@ export class UsersComponent implements OnInit, AfterViewInit {
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: () => {
-                this.snackBar.open('Usuario actualizado', 'OK', { duration: 2000 });
+                this.notify.success('Usuario actualizado');
                 this.fetchUsuarios();
               },
-              error: () => this.snackBar.open('Error al actualizar', 'Cerrar'),
+              error: () => this.notify.error('Error al actualizar'),
             });
         } else {
           this.usuariosService
@@ -127,10 +126,10 @@ export class UsersComponent implements OnInit, AfterViewInit {
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: () => {
-                this.snackBar.open('Usuario creado', 'OK', { duration: 2000 });
+                this.notify.success('Usuario creado');
                 this.fetchUsuarios();
               },
-              error: () => this.snackBar.open('Error al crear', 'Cerrar'),
+              error: () => this.notify.error('Error al crear'),
             });
         }
       });
@@ -157,10 +156,10 @@ export class UsersComponent implements OnInit, AfterViewInit {
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: () => {
-                this.snackBar.open('Usuario eliminado', 'OK', { duration: 2000 });
+                this.notify.success('Usuario eliminado');
                 this.fetchUsuarios();
               },
-              error: () => this.snackBar.open('Error al eliminar', 'Cerrar'),
+              error: () => this.notify.error('Error al eliminar'),
             });
         }
       });

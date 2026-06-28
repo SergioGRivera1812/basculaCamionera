@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-reports',
@@ -17,9 +17,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
     MatButtonModule, 
     MatIconModule, 
     MatFormFieldModule, 
-    MatDatepickerModule, 
-    MatNativeDateModule,
-    MatSnackBarModule
+    MatDatepickerModule,
+    MatNativeDateModule
   ],
   template: `
     <div class="page-container">
@@ -91,18 +90,14 @@ export class ReportsComponent {
     }
   ];
 
-  constructor(private snackBar: MatSnackBar) {}
+  private readonly notify = inject(NotificationService);
 
   generateReport(report: any, format: string) {
-    this.snackBar.open(`Generando ${format} de "${report.title}"...`, 'Cerrar', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+    this.notify.info(`Generando ${format}`, report.title);
 
     // Simulación de descarga
     setTimeout(() => {
-      this.snackBar.open(`${format} descargado correctamente`, 'OK', { duration: 2000 });
+      this.notify.success(`${format} descargado correctamente`);
     }, 2000);
   }
 }

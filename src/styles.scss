@@ -41,3 +41,25 @@ html, body {
 * {
   box-sizing: border-box;
 }
+
+/* ============================================================
+   Notificaciones (NotificationComponent vía MatSnackBar).
+   Quitamos el "surface" por defecto de Material para que se vea
+   únicamente nuestra tarjeta.
+   ============================================================ */
+.app-notification {
+  --mdc-snackbar-container-color: transparent;
+  --mdc-snackbar-supporting-text-color: inherit;
+
+  .mdc-snackbar__surface {
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    min-width: auto !important;
+  }
+
+  .mat-mdc-snack-bar-label,
+  .mdc-snackbar__label {
+    padding: 0 !important;
+  }
+}

@@ -19,7 +19,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { NotificationService } from '../../services/notification.service';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ClientesService } from '../../services/clientes.service';
 import { Cliente } from '../../models/database.models';
@@ -40,7 +40,6 @@ import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-
     MatInputModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    MatSnackBarModule,
     MatDialogModule,
   ],
   templateUrl: './clients.component.html',
@@ -49,7 +48,7 @@ import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-
 })
 export class ClientsComponent implements OnInit, AfterViewInit {
   private readonly srv = inject(ClientesService);
-  private readonly snack = inject(MatSnackBar);
+  private readonly notify = inject(NotificationService);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -90,7 +89,7 @@ export class ClientsComponent implements OnInit, AfterViewInit {
         error: () => {
           this.isLoading = false;
           this.cdr.markForCheck();
-          this.snack.open('Error al conectar con la API', 'Cerrar', { duration: 2000 });
+          this.notify.error('Error al conectar con la API');
         },
       });
   }
@@ -114,10 +113,10 @@ export class ClientsComponent implements OnInit, AfterViewInit {
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: () => {
-                this.snack.open('Cliente actualizado', 'OK', { duration: 2000 });
+                this.notify.success('Cliente actualizado');
                 this.fetch();
               },
-              error: () => this.snack.open('Error al actualizar', 'Cerrar'),
+              error: () => this.notify.error('Error al actualizar'),
             });
         } else {
           this.srv
@@ -125,10 +124,10 @@ export class ClientsComponent implements OnInit, AfterViewInit {
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: () => {
-                this.snack.open('Cliente creado', 'OK', { duration: 2000 });
+                this.notify.success('Cliente creado');
                 this.fetch();
               },
-              error: () => this.snack.open('Error al crear', 'Cerrar'),
+              error: () => this.notify.error('Error al crear'),
             });
         }
       });
@@ -155,10 +154,10 @@ export class ClientsComponent implements OnInit, AfterViewInit {
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: () => {
-                this.snack.open('Cliente eliminado', 'OK', { duration: 2000 });
+                this.notify.success('Cliente eliminado');
                 this.fetch();
               },
-              error: () => this.snack.open('Error al eliminar', 'Cerrar'),
+              error: () => this.notify.error('Error al eliminar'),
             });
         }
       });

@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { WeighingFormDialogComponent } from './components/weighing-form-dialog/weighing-form-dialog.component';
 import { TransactionDetailsDialogComponent } from './components/transaction-details-dialog/transaction-details-dialog.component';
 import { BasculaService } from '../../services/bascula.service';
+import { NotificationService } from '../../services/notification.service';
 import { EntradaBascula, SalidaBascula, Transaccion } from '../../models/database.models';
 
 @Component({
@@ -30,7 +30,7 @@ import { EntradaBascula, SalidaBascula, Transaccion } from '../../models/databas
 })
 export class ScaleComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly notify = inject(NotificationService);
   private readonly basculaService = inject(BasculaService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -85,7 +85,7 @@ export class ScaleComponent implements OnInit {
   onTarar(): void {
     this.tare = this.currentWeight;
     this.net = Math.abs(this.gross - this.tare);
-    this.showNotification('Peso Tarado correctamente');
+    this.notify.success('Peso tarado correctamente', `${this.tare.toLocaleString()} kg`);
   }
 
   onCero(): void {
@@ -93,12 +93,12 @@ export class ScaleComponent implements OnInit {
     this.gross = 0;
     this.tare = 0;
     this.net = 0;
-    this.showNotification('Báscula puesta a Cero');
+    this.notify.info('Báscula puesta a cero');
   }
 
   onImprimir(): void {
     if (this.currentWeight <= 0) {
-      this.showNotification('No hay peso detectado en la báscula');
+      this.notify.info('No hay peso detectado en la báscula');
       return;
     }
 
@@ -130,7 +130,7 @@ export class ScaleComponent implements OnInit {
 
   onFinalizarSalida(transaction: Transaccion): void {
     if (this.currentWeight <= 0) {
-      this.showNotification('Debe haber un camión en la báscula para registrar la salida');
+      this.notify.error('Debe haber un camión en la báscula para registrar la salida');
       return;
     }
 
@@ -160,16 +160,23 @@ export class ScaleComponent implements OnInit {
 
   onCancelar(): void {
     this.onCero();
-    this.showNotification('Operación cancelada y báscula reseteada');
+    this.notify.info('Operación cancelada y báscula reseteada');
   }
 
   private guardarEntrada(data: any): void {
+    const tara = Number(data.weight);
+
+    if (!Number.isFinite(tara)) {
+      this.notify.error('Peso inválido', 'No se pudo registrar la tara de la entrada.');
+      return;
+    }
+
     const nuevaEntrada: EntradaBascula = {
       codigoEntrada: data.codigoEntrada || Math.floor(100000 + Math.random() * 900000),
       nombre_chofer: data.driver,
       id_material: data.product_id,
       cliente: data.cliente || 'CLIENTE MOSTRADOR',
-      tara: data.weight,
+      tara,
       activo: 1
     };
 
@@ -178,11 +185,11 @@ export class ScaleComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.showNotification(`Ticket de Entrada #${nuevaEntrada.codigoEntrada} guardado`);
+          this.notify.success('Ticket de Entrada guardado', `Folio #${nuevaEntrada.codigoEntrada}`);
           this.onCero();
           this.cargarDatos();
         },
-        error: (err) => this.showNotification('Error al registrar: ' + err.message),
+        error: (err) => this.notify.error('Error al registrar la entrada', err.message),
       });
   }
 
@@ -190,14 +197,26 @@ export class ScaleComponent implements OnInit {
     const codigo = data.codigoEntrada || (this.entradasActivas.length > 0 ? this.entradasActivas[0].codigoEntrada : null);
 
     if (!codigo) {
-      this.showNotification('Error: No se encontró una entrada previa para este ticket');
+      this.notify.error('No se encontró una entrada previa para este ticket');
+      return;
+    }
+
+    // La tara correcta es la de la entrada original (data.tare). Solo si no
+    // viene, caemos a la tara del componente. Forzamos todo a número.
+    const tara = Number(data.tare ?? this.tare) || 0;
+    const bruto = Number(data.weight);
+    const neto = Math.abs(bruto - tara);
+
+    // El backend no valida la entrada: nos aseguramos de NO enviarle NaN.
+    if (!Number.isFinite(bruto) || !Number.isFinite(neto)) {
+      this.notify.error('Peso inválido', 'No se pudo calcular el bruto/neto de la salida.');
       return;
     }
 
     const nuevaSalida: SalidaBascula = {
       codigoEntrada: codigo,
-      bruto: data.weight,
-      neto: Math.abs(data.weight - this.tare),
+      bruto,
+      neto,
       activo: 0
     };
 
@@ -206,11 +225,11 @@ export class ScaleComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.showNotification(`Ticket de Salida #${codigo} completado exitosamente`);
+          this.notify.success('Ticket de Salida completado', `Folio #${codigo}`);
           this.onCero();
           this.cargarDatos();
         },
-        error: (err) => this.showNotification('Error al completar salida: ' + err.message),
+        error: (err) => this.notify.error('Error al completar la salida', err.message),
       });
   }
 
@@ -222,14 +241,6 @@ export class ScaleComponent implements OnInit {
   }
 
   printTransaction(t: Transaccion): void {
-    this.showNotification(`Reimprimiendo ticket #${t.codigoEntrada || t.folio}...`);
-  }
-
-  private showNotification(message: string): void {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    });
+    this.notify.info('Reimprimiendo ticket', `Folio #${t.codigoEntrada || t.folio}`);
   }
 }

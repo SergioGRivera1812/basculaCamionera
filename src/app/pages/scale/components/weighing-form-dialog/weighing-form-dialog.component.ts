@@ -55,7 +55,7 @@ import { Cliente, Chofer, Material } from '../../../../models/database.models';
             </div>
             <div class="detail-item net-highlight">
               <span>Neto</span>
-              <strong>{{ (data.weight - data.tare) | number }} kg</strong>
+              <strong>{{ (data.weight - (data.tare || 0)) | number }} kg</strong>
             </div>
           </div>
         </div>
