@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Material {
   id?: number;
@@ -12,7 +13,7 @@ export interface Material {
   providedIn: 'root'
 })
 export class MaterialesService {
-  private readonly API_URL = 'http://localhost:3000/api/materiales';
+  private readonly API_URL = `${environment.apiUrl}/materiales`;
 
   constructor(private http: HttpClient) { }
 

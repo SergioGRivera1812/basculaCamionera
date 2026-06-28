@@ -1,8 +1,39 @@
 /* You can add global styles to this file, and also import other style files */
 
-html, body { 
-  height: 100%; 
-  margin: 0; 
+/* ============================================================
+   Design tokens de marca (BASCU-SYS)
+   Se exponen como CSS custom properties: funcionan en cualquier
+   componente (incluidos los de estilos inline) sin imports SCSS.
+   ============================================================ */
+:root {
+  /* Paleta de marca */
+  --brand-dark: #1a252f;
+  --brand-navy: #2c3e50;
+  --brand-primary: #2282db;
+  --brand-accent: #3498db;
+  --brand-accent-hover: #2980b9;
+
+  /* Texto */
+  --text-strong: #1e293b;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+  --sidebar-text: #bdc3c7;
+
+  /* Superficies */
+  --bg-app: #f4f6f9;
+  --surface: #ffffff;
+
+  /* Estados */
+  --color-success: #10b981;
+  --color-danger: #e11d48;
+
+  /* Sombras */
+  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
   padding: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
 }

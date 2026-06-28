@@ -1,69 +1,88 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AuthService } from '../../services/auth.service';
+import { RedirectService } from '../../services/redirect.service';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrl: './login.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LoginComponent {
-loginForm: FormGroup;
-  // Puedes usar una variable para manejar errores o estados de carga
-  isLoading: boolean = false;
-  errorMessage: string | null = null;
+export class LoginComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
+  private readonly redirect = inject(RedirectService);
 
-  constructor(private fb: FormBuilder, private router: Router) {
-    // Inicialización del formulario con el FormBuilder
-    this.loginForm = this.fb.group({
-      email: [
-        '', // Valor inicial
-        [Validators.required, Validators.email] // Validadores
-      ],
-      password: [
-        '', // Valor inicial
-        [Validators.required, Validators.minLength(6)] // Validadores
-      ]
-    });
-  }
+  readonly isLoading = signal(false);
+  readonly errorMessage = signal<string | null>(null);
+  readonly hidePassword = signal(true);
+
+  loginForm: FormGroup = this.fb.group({
+    usuario: ['', [Validators.required]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
+  });
 
   ngOnInit(): void {
-    // Aquí puedes realizar tareas de inicialización si es necesario
-  }
-
-  /**
-   * Maneja el envío del formulario.
-   */
-  onSubmit(): void {
-    if (this.loginForm.valid) {
-      this.isLoading = true;
-      this.errorMessage = null;
-
-      const { email, password } = this.loginForm.value;
-
-      console.log('Datos de Login:', email, password);
-
-      // --- SIMULACIÓN DE LLAMADA ASÍNCRONA (Reemplazar con tu lógica de servicio) ---
-      setTimeout(() => {
-        this.isLoading = false;
-        // Simular un login exitoso
-        if (email === 'admin@admin.com' && password === 'password') {
-          console.log('Login exitoso. Redirigir.');
-          this.router.navigate(['/scale']);
-          // Aquí iría la lógica de autenticación y navegación
-        } else {
-          // Simular un error de credenciales
-          this.errorMessage = 'Credenciales no válidas. Inténtalo de nuevo.';
-          this.loginForm.reset(); // Opcional: limpiar campos
-        }
-      }, 1500);
-      // ----------------------------------------------------------------------------
-
-    } else {
-      console.log('Formulario no válido. Revisar campos.');
-      // Opcional: Marcar todos los campos como 'touched' para mostrar los errores inmediatamente
-      this.loginForm.markAllAsTouched();
+    // Si ya hay sesión activa, no tiene sentido mostrar el login.
+    if (this.auth.isAuthenticated()) {
+      this.redirectAfterLogin();
     }
   }
 
+  togglePassword(): void {
+    this.hidePassword.update((hidden) => !hidden);
+  }
+
+  onSubmit(): void {
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.auth.login(this.loginForm.getRawValue()).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.redirectAfterLogin();
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        // El backend devuelve 404 (usuario inexistente) o 401 (contraseña incorrecta).
+        this.errorMessage.set(
+          err?.status === 401 || err?.status === 404
+            ? 'Usuario o contraseña incorrectos. Inténtalo de nuevo.'
+            : 'No se pudo iniciar sesión. Verifica tu conexión.',
+        );
+        this.loginForm.get('password')?.reset();
+      },
+    });
+  }
+
+  private redirectAfterLogin(): void {
+    const target = this.redirect.consume() || '/scale';
+    this.router.navigateByUrl(target);
+  }
 }

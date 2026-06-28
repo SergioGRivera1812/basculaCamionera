@@ -46,3 +46,19 @@ export interface SalidaBascula {
   fecha_salida?: string;
   activo: number;
 }
+
+/** Fila del historial de transacciones que devuelve el backend (/transacciones). */
+export interface Transaccion {
+  id?: number;
+  folio: number;
+  codigoEntrada?: number;
+  cliente: string;
+  chofer: string;
+  placa?: string;
+  id_material?: number;
+  tara: number;
+  bruto?: number;
+  neto?: number;
+  fecha?: string;
+  estado: 'completado' | 'pendiente';
+}

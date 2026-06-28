@@ -1,17 +1,20 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { EntradaBascula, SalidaBascula } from '../models/database.models';
+import { EntradaBascula, SalidaBascula, Transaccion } from '../models/database.models';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BasculaService {
-  private readonly API_URL = 'http://localhost:3000/api';
+  private readonly API_URL = environment.apiUrl;
   constructor(private http: HttpClient) { }
 
   getEntradasActivas(): Observable<EntradaBascula[]> {
-    return this.http.get<EntradaBascula[]>(`${this.API_URL}/entrada/activos`);
+    // /entrada/activos devuelve TODAS (nombre engañoso del backend);
+    // /entrada/activos/lista devuelve solo las activas (activo = 1).
+    return this.http.get<EntradaBascula[]>(`${this.API_URL}/entrada/activos/lista`);
   }
 
   registrarEntrada(entrada: EntradaBascula): Observable<EntradaBascula> {
@@ -22,7 +25,7 @@ export class BasculaService {
     return this.http.post<SalidaBascula>(`${this.API_URL}/salida`, salida);
   }
 
-  getHistorialCompleto(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.API_URL}/transacciones`);
+  getHistorialCompleto(): Observable<Transaccion[]> {
+    return this.http.get<Transaccion[]>(`${this.API_URL}/transacciones`);
   }
 }
