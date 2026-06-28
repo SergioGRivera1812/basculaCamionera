@@ -43,7 +43,7 @@ import { AuthService } from '../../services/auth.service';
           <span matListItemTitle *ngIf="!isCollapsed">Choferes</span>
         </a>
 
-        <a mat-list-item routerLink="/users" routerLinkActive="active-link" 
+        <a mat-list-item routerLink="/users" routerLinkActive="active-link" *ngIf="isAdmin()"
            [matTooltip]="isCollapsed ? 'Usuarios' : ''" matTooltipPosition="right">
           <mat-icon matListItemIcon>people</mat-icon>
           <span matListItemTitle *ngIf="!isCollapsed">Usuarios</span>
@@ -57,6 +57,14 @@ import { AuthService } from '../../services/auth.service';
       </mat-nav-list>
 
       <div class="sidebar-spacer"></div>
+
+      <div class="user-info" *ngIf="user() as u">
+        <div class="user-avatar">{{ (u.nombre || '?').charAt(0) | uppercase }}</div>
+        <div class="user-meta" *ngIf="!isCollapsed">
+          <span class="user-name">{{ u.nombre }}</span>
+          <span class="user-role">{{ u.rol | uppercase }}</span>
+        </div>
+      </div>
 
       <mat-nav-list class="bottom-nav">
         <a mat-list-item (click)="logout()" class="logout-link"
@@ -114,11 +122,28 @@ import { AuthService } from '../../services/auth.service';
       color: white;
       width: 30px;
       height: 30px;
-      line-height: 30px;
+      padding: 0;
+      line-height: normal;
       border-radius: 50%;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       &:hover { background-color: var(--brand-accent-hover); }
-      mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        margin: 0;
+      }
+
+      // El "touch target" de Material (48px, absoluto) puede descentrar el contenido.
+      ::ng-deep .mat-mdc-button-touch-target {
+        width: 30px;
+        height: 30px;
+      }
     }
 
     mat-nav-list {
@@ -144,12 +169,41 @@ import { AuthService } from '../../services/auth.service';
     }
 
     .sidebar-spacer { flex-grow: 1; }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      overflow: hidden;
+      white-space: nowrap;
+
+      .user-avatar {
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background-color: var(--brand-accent);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+      .user-meta { display: flex; flex-direction: column; overflow: hidden; }
+      .user-name { font-size: 0.9rem; font-weight: 600; color: white; text-overflow: ellipsis; overflow: hidden; }
+      .user-role { font-size: 0.7rem; color: var(--brand-accent); letter-spacing: 0.5px; }
+    }
+    .sidebar.collapsed .user-info { justify-content: center; padding: 12px 10px; }
+
     .bottom-nav { border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 0; }
     .logout-link { cursor: pointer; }
   `]
 })
 export class SidebarComponent {
   private readonly auth = inject(AuthService);
+  readonly isAdmin = this.auth.isAdmin;
+  readonly user = this.auth.currentUser;
 
   @Input() isCollapsed = false;
   @Output() collapsedChanged = new EventEmitter<boolean>();

@@ -39,7 +39,7 @@ export class LoginComponent implements OnInit {
   readonly hidePassword = signal(true);
 
   loginForm: FormGroup = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
+    usuario: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(6)]],
   });
 
@@ -70,9 +70,10 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading.set(false);
+        // El backend devuelve 404 (usuario inexistente) o 401 (contraseña incorrecta).
         this.errorMessage.set(
-          err?.status === 401
-            ? 'Credenciales no válidas. Inténtalo de nuevo.'
+          err?.status === 401 || err?.status === 404
+            ? 'Usuario o contraseña incorrectos. Inténtalo de nuevo.'
             : 'No se pudo iniciar sesión. Verifica tu conexión.',
         );
         this.loginForm.get('password')?.reset();

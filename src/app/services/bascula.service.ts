@@ -12,7 +12,9 @@ export class BasculaService {
   constructor(private http: HttpClient) { }
 
   getEntradasActivas(): Observable<EntradaBascula[]> {
-    return this.http.get<EntradaBascula[]>(`${this.API_URL}/entrada/activos`);
+    // /entrada/activos devuelve TODAS (nombre engañoso del backend);
+    // /entrada/activos/lista devuelve solo las activas (activo = 1).
+    return this.http.get<EntradaBascula[]>(`${this.API_URL}/entrada/activos/lista`);
   }
 
   registrarEntrada(entrada: EntradaBascula): Observable<EntradaBascula> {
