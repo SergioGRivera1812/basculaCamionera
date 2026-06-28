@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 import { ScaleComponent } from './scale.component';
 
@@ -8,9 +11,13 @@ describe('ScaleComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ScaleComponent]
-    })
-    .compileComponents();
+      imports: [ScaleComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideNoopAnimations(),
+      ],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ScaleComponent);
     component = fixture.componentInstance;

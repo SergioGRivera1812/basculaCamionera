@@ -1,0 +1,55 @@
+/* Layout compartido para páginas con tabla (Clientes, Usuarios, Choferes). */
+
+.page-container {
+  padding: 30px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0;
+    color: var(--brand-navy);
+  }
+}
+
+.table-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 16px 20px 4px;
+  box-shadow: var(--shadow-card);
+}
+
+.toolbar {
+  display: flex;
+  margin-bottom: 8px;
+
+  .search-field {
+    width: 100%;
+    max-width: 360px;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.state-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 0;
+  color: var(--text-faint);
+
+  &.empty mat-icon {
+    font-size: 42px;
+    width: 42px;
+    height: 42px;
+    opacity: 0.6;
+  }
+}

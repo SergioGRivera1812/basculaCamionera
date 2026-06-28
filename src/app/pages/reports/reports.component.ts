@@ -51,14 +51,14 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
   `,
   styles: [`
     .page-container { padding: 30px; }
-    .page-header { margin-bottom: 30px; h1 { margin: 0; color: #2c3e50; } }
+    .page-header { margin-bottom: 30px; h1 { margin: 0; color: var(--brand-navy); } }
     .reports-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px; }
     .report-card { 
       padding: 10px; 
       border-radius: 12px; 
       transition: transform 0.2s, box-shadow 0.2s;
       &:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-      mat-card-content { padding: 15px 0; color: #666; font-size: 0.9rem; }
+      mat-card-content { padding: 15px 0; color: var(--text-muted); font-size: 0.9rem; }
       mat-card-actions { gap: 8px; }
     }
   `]

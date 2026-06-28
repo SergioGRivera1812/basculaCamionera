@@ -204,6 +204,7 @@ export class WeighingFormDialogComponent implements OnInit {
     private materialesSrv: MaterialesService
   ) {
     this.weighingForm = this.fb.group({
+      codigoEntrada: [data.codigoEntrada || ''],
       plate: [data.plate || '', [Validators.required]],
       driver: [data.driver || '', Validators.required],
       cliente: [data.cliente || '', Validators.required],

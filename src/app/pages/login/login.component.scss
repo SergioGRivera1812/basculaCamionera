@@ -1,54 +1,101 @@
-$card-max-width: 400px;
-$primary-color: var(--mat-primary-color); 
+$card-max-width: 420px;
 
 .login-container {
   display: flex;
-  justify-content: center; 
-  align-items: center;    
-  min-height: 95.6vh;     
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
   padding: 20px;
-  background-color: #2282db; 
+  // Degradado de marca en lugar de un azul plano.
+  background: linear-gradient(
+    135deg,
+    var(--brand-dark) 0%,
+    var(--brand-navy) 45%,
+    var(--brand-primary) 100%
+  );
 }
 
 .login-card {
   max-width: $card-max-width;
   width: 100%;
-  padding: 30px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  padding: 36px 32px;
+  border-radius: 16px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
 }
 
-.login-title {
-  display: flex;
-  align-items: center;
-  gap: 10px; 
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: $primary-color;
+.brand {
+  text-align: center;
+  margin-bottom: 28px;
+
+  .brand-badge {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--brand-accent), var(--brand-primary));
+    box-shadow: 0 6px 16px rgba(34, 130, 219, 0.4);
+
+    mat-icon {
+      color: #fff;
+      font-size: 34px;
+      width: 34px;
+      height: 34px;
+    }
+  }
+
+  .brand-name {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--brand-navy);
+  }
+
+  .brand-subtitle {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
 }
 
 .full-width {
   width: 100%;
-  margin-bottom: 15px;
+  margin-bottom: 8px;
 }
 
 .login-button {
-  padding: 10px 0;
-  font-size: 1.1rem;
-  margin-top: 10px;
-  transition: background-color 0.3s ease;
-  &:hover {
-    filter: brightness(1.1); 
+  height: 46px;
+  margin-top: 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  .btn-spinner {
+    display: inline-block;
   }
 }
 
 .error-message {
-  color: var(--mat-error-color);
-  background-color: #fef0f0;
-  border: 1px solid var(--mat-error-color);
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 4px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c0392b;
+  background-color: #fdecea;
+  border: 1px solid #f5c6cb;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
 }

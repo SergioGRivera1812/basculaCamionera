@@ -1,10 +1,11 @@
-import { Component, EventEmitter, Output, Input } from '@angular/core';
+import { Component, EventEmitter, Output, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -58,7 +59,8 @@ import { MatButtonModule } from '@angular/material/button';
       <div class="sidebar-spacer"></div>
 
       <mat-nav-list class="bottom-nav">
-        <a mat-list-item routerLink="/" [matTooltip]="isCollapsed ? 'Cerrar Sesión' : ''" matTooltipPosition="right">
+        <a mat-list-item (click)="logout()" class="logout-link"
+           [matTooltip]="isCollapsed ? 'Cerrar Sesión' : ''" matTooltipPosition="right">
           <mat-icon matListItemIcon>logout</mat-icon>
           <span matListItemTitle *ngIf="!isCollapsed">Salir</span>
         </a>
@@ -69,7 +71,7 @@ import { MatButtonModule } from '@angular/material/button';
     .sidebar {
       width: 260px;
       height: 100vh;
-      background-color: #2c3e50;
+      background-color: var(--brand-navy);
       color: white;
       display: flex;
       flex-direction: column;
@@ -89,11 +91,11 @@ import { MatButtonModule } from '@angular/material/button';
       display: flex;
       align-items: center;
       gap: 15px;
-      background-color: #1a252f;
+      background-color: var(--brand-dark);
       overflow: hidden;
       white-space: nowrap;
 
-      .logo-icon { font-size: 2.5rem; width: 40px; height: 40px; color: #3498db; flex-shrink: 0; }
+      .logo-icon { font-size: 2.5rem; width: 40px; height: 40px; color: var(--brand-accent); flex-shrink: 0; }
       .logo-text { font-size: 1.5rem; font-weight: bold; letter-spacing: 1px; }
     }
 
@@ -108,21 +110,21 @@ import { MatButtonModule } from '@angular/material/button';
     }
 
     .toggle-btn {
-      background-color: #3498db;
+      background-color: var(--brand-accent);
       color: white;
       width: 30px;
       height: 30px;
       line-height: 30px;
       border-radius: 50%;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      &:hover { background-color: #2980b9; }
+      &:hover { background-color: var(--brand-accent-hover); }
       mat-icon { font-size: 20px; width: 20px; height: 20px; }
     }
 
     mat-nav-list {
       padding-top: 10px;
       a {
-        color: #bdc3c7;
+        color: var(--sidebar-text);
         margin: 5px 10px;
         border-radius: 8px;
         height: 50px;
@@ -132,25 +134,32 @@ import { MatButtonModule } from '@angular/material/button';
         &:hover { background-color: rgba(255, 255, 255, 0.05); color: white; }
         
         &.active-link {
-          background-color: #3498db;
+          background-color: var(--brand-accent);
           color: white;
           mat-icon { color: white; }
         }
 
-        mat-icon { color: #bdc3c7; flex-shrink: 0; }
+        mat-icon { color: var(--sidebar-text); flex-shrink: 0; }
       }
     }
 
     .sidebar-spacer { flex-grow: 1; }
     .bottom-nav { border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 0; }
+    .logout-link { cursor: pointer; }
   `]
 })
 export class SidebarComponent {
+  private readonly auth = inject(AuthService);
+
   @Input() isCollapsed = false;
   @Output() collapsedChanged = new EventEmitter<boolean>();
 
   toggleSidebar() {
     this.isCollapsed = !this.isCollapsed;
     this.collapsedChanged.emit(this.isCollapsed);
+  }
+
+  logout() {
+    this.auth.logout();
   }
 }
