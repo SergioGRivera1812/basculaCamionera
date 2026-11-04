@@ -17,7 +17,7 @@ import { BasculaService } from '../../../../services/bascula.service';
           </div>
           <div>
             <h2>Comprobante de Pesaje</h2>
-            <span class="subtitle">Báscula Camionera Central · BASCU-SYS</span>
+            <span class="subtitle">Báscula Camionera Central · UTAHIME</span>
           </div>
         </div>
         <span class="folio-pill">#{{ data.codigoEntrada || data.folio || data.id }}</span>

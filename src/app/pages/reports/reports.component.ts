@@ -516,7 +516,7 @@ export class ReportsComponent implements OnInit {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('BASCU-SYS · BÁSCULA CAMIONERA CENTRAL', 14, 11);
+      doc.text('UTAHIME · BÁSCULA CAMIONERA CENTRAL', 14, 11);
 
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
@@ -617,7 +617,7 @@ export class ReportsComponent implements OnInit {
         });
       }
 
-      const fileName = `BASCU-SYS_${report.key}_${this.getFechaArchivo()}.pdf`;
+      const fileName = `UTAHIME_${report.key}_${this.getFechaArchivo()}.pdf`;
       doc.save(fileName);
       this.notify.success('PDF generado correctamente', fileName);
     } catch (err: any) {
@@ -709,7 +709,7 @@ export class ReportsComponent implements OnInit {
         XLSX.utils.book_append_sheet(wb, wsBalance, 'Balance_Materiales');
       }
 
-      const fileName = `BASCU-SYS_${report.key}_${this.getFechaArchivo()}.xlsx`;
+      const fileName = `UTAHIME_${report.key}_${this.getFechaArchivo()}.xlsx`;
       XLSX.writeFile(wb, fileName);
       this.notify.success('Excel descargado correctamente', fileName);
     } catch (err: any) {

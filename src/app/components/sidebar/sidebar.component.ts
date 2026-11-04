@@ -18,7 +18,7 @@ import { AuthService } from '../../services/auth.service';
           <mat-icon class="logo-icon">balance</mat-icon>
         </div>
         <div class="logo-text-group" *ngIf="!isCollapsed">
-          <span class="logo-text">BASCU-SYS</span>
+          <span class="logo-text">UTAHIME</span>
           <span class="logo-subtext">CONTROL INDUSTRIAL</span>
         </div>
       </div>
