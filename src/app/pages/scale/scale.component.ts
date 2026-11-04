@@ -70,6 +70,9 @@ export class ScaleComponent implements OnInit {
   gross = 0;
   unit = 'kg';
 
+  /** Camión pendiente seleccionado en la tabla para previsualizar y procesar su salida en la consola */
+  selectedPendingTx: Transaccion | null = null;
+
   // Historial y catálogos auxiliares
   recentTransactions: Transaccion[] = [];
   entradasActivas: EntradaBascula[] = [];
@@ -100,9 +103,7 @@ export class ScaleComponent implements OnInit {
       const liveWeight = this.pesoHardware();
       this.currentWeight = liveWeight;
       this.gross = liveWeight;
-      if (this.tare > 0) {
-        this.net = Math.abs(this.gross - this.tare);
-      }
+      this.recalcularNetoEnConsola();
       this.cdr.markForCheck();
     });
   }
@@ -117,6 +118,56 @@ export class ScaleComponent implements OnInit {
 
   esCancelado(t: Transaccion): boolean {
     return t?.estado === 'cancelado';
+  }
+
+  esSeleccionado(t: Transaccion): boolean {
+    if (!this.selectedPendingTx || !t) return false;
+    return Number(this.selectedPendingTx.folio) === Number(t.folio);
+  }
+
+  /**
+   * Selecciona un camión pendiente de la tabla y carga su Tara en la Consola Derecha
+   * para visualizar en vivo Bruto, Tara y Peso Neto antes de cerrar su salida.
+   */
+  seleccionarCamionEnPatio(t: Transaccion, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!this.esPendiente(t)) {
+      return;
+    }
+
+    if (this.esSeleccionado(t)) {
+      this.limpiarSeleccionConsola();
+      return;
+    }
+
+    this.selectedPendingTx = t;
+    this.tare = Number(t.tara) || 0;
+    this.recalcularNetoEnConsola();
+    this.cdr.markForCheck();
+  }
+
+  limpiarSeleccionConsola(): void {
+    this.selectedPendingTx = null;
+    this.tare = 0;
+    this.net = 0;
+    this.cdr.markForCheck();
+  }
+
+  private recalcularNetoEnConsola(): void {
+    if (!this.selectedPendingTx && this.tare <= 0) {
+      this.net = 0;
+      return;
+    }
+    const tipoOp = this.selectedPendingTx?.tipo_operacion || 'DESPACHO';
+    if (tipoOp === 'RECEPCION') {
+      // En RECEPCIÓN entra cargado (tara/1er pesaje) y sale vacío (peso actual)
+      this.net = this.tare - this.currentWeight;
+    } else {
+      // En DESPACHO entra vacío (tara) y sale cargado (peso actual)
+      this.net = this.currentWeight - this.tare;
+    }
   }
 
   cargarDatos(): void {
@@ -180,7 +231,6 @@ export class ScaleComponent implements OnInit {
 
           return {
             ...t,
-            // Priorizar el id de entrada_bascula para el endpoint POST /api/entrada/:id/cancelar
             id: matchActiva?.id ?? t.id_entrada ?? t.id,
             folio: folioNum,
             codigoEntrada: folioNum,
@@ -232,6 +282,20 @@ export class ScaleComponent implements OnInit {
         this.recentTransactions = enriched;
         this.dataSource.data = enriched;
 
+        // Si había un camión seleccionado y ya no está pendiente, limpiar la consola
+        if (this.selectedPendingTx) {
+          const updatedSelected = enriched.find(
+            (r) => Number(r.folio) === Number(this.selectedPendingTx?.folio) && r.estado === 'pendiente'
+          );
+          if (updatedSelected) {
+            this.selectedPendingTx = updatedSelected;
+            this.tare = Number(updatedSelected.tara) || 0;
+            this.recalcularNetoEnConsola();
+          } else {
+            this.limpiarSeleccionConsola();
+          }
+        }
+
         this.dataSource.filterPredicate = (row: Transaccion, filter: string) => {
           const searchStr =
             `${row.folio} ${row.tipo_operacion || ''} ${row.cliente} ${row.chofer} ${row.placa || ''} ${row.material || ''} ${row.estado}`.toLowerCase();
@@ -263,35 +327,36 @@ export class ScaleComponent implements OnInit {
     this.basculaService.fijarPesoSimulado(peso);
   }
 
-  onTarar(): void {
-    this.tare = this.currentWeight;
-    this.net = Math.abs(this.gross - this.tare);
-    this.notify.success('Peso tarado correctamente', `${this.tare.toLocaleString()} kg`);
-  }
-
   onCero(): void {
     this.basculaService.fijarPesoSimulado(0);
     this.currentWeight = 0;
     this.gross = 0;
-    this.tare = 0;
-    this.net = 0;
+    this.recalcularNetoEnConsola();
     this.notify.info('Báscula puesta a cero');
   }
 
-  onImprimir(): void {
+  /**
+   * Acción del botón principal de la consola derecha:
+   * - Si hay un camión en patio seleccionado (`selectedPendingTx`), abre su Cierre de Salida.
+   * - Si no hay camión seleccionado, abre el Registro de Entrada para un vehículo nuevo.
+   */
+  onAccionPrincipalConsola(): void {
     if (this.currentWeight <= 0) {
       this.notify.info('No hay peso detectado en la báscula');
       return;
     }
 
-    const isSalida = this.tare > 0;
+    if (this.selectedPendingTx) {
+      this.onFinalizarSalida(this.selectedPendingTx);
+      return;
+    }
 
     const dialogRef = this.dialog.open(WeighingFormDialogComponent, {
       width: '540px',
       data: {
         weight: this.currentWeight,
-        type: isSalida ? 'salida' : 'entrada',
-        tare: this.tare,
+        type: 'entrada',
+        tare: 0,
         tipo_operacion: 'DESPACHO',
         entradasActivas: this.entradasActivas,
       },
@@ -302,16 +367,20 @@ export class ScaleComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         if (result) {
-          if (isSalida) {
-            this.guardarSalida(result);
-          } else {
-            this.guardarEntrada(result);
-          }
+          this.guardarEntrada(result);
         }
       });
   }
 
-  onFinalizarSalida(transaction: Transaccion): void {
+  onFinalizarSalida(transaction: Transaccion, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    // Cargar también en la consola derecha para reflejar sus datos
+    this.selectedPendingTx = transaction;
+    this.tare = Number(transaction.tara) || 0;
+    this.recalcularNetoEnConsola();
+
     if (this.currentWeight <= 0) {
       this.notify.error('Debe haber un camión en la báscula para registrar la salida');
       return;
@@ -343,10 +412,12 @@ export class ScaleComponent implements OnInit {
       });
   }
 
-  onAnularEntrada(transaction: Transaccion): void {
+  onAnularEntrada(transaction: Transaccion, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     const folio = Number(transaction.codigoEntrada || transaction.folio);
     const matchActiva = this.entradasActivas.find((e) => Number(e.codigoEntrada) === folio);
-    // Priorizar siempre el id primario de entrada_bascula
     const entryId = matchActiva?.id ?? transaction.id ?? transaction.id_entrada ?? folio;
 
     const dialogRef = this.dialog.open(CancelEntryDialogComponent, {
@@ -372,8 +443,9 @@ export class ScaleComponent implements OnInit {
           .subscribe({
             next: () => {
               this.foliosCancelados.add(folio);
-              transaction.estado = 'cancelado';
-              transaction.motivo_cancelacion = motivo;
+              if (this.esSeleccionado(transaction)) {
+                this.limpiarSeleccionConsola();
+              }
               this.notify.success(
                 'Pesaje de entrada anulado',
                 `Folio #${folio} marcado como CANCELADO`
@@ -390,11 +462,6 @@ export class ScaleComponent implements OnInit {
       });
   }
 
-  onCancelar(): void {
-    this.onCero();
-    this.notify.info('Operación cancelada y báscula reseteada');
-  }
-
   private guardarEntrada(data: any): void {
     const tara = Number(data.weight);
 
@@ -406,7 +473,6 @@ export class ScaleComponent implements OnInit {
     const tipoOperacion: TipoOperacion = data.tipo_operacion || 'DESPACHO';
     const codigo = Number(data.codigoEntrada) || Math.floor(100000 + Math.random() * 900000);
 
-    // Si este folio había sido cancelado antes y se reutiliza, quitarlo del set local de cancelados
     this.foliosCancelados.delete(codigo);
 
     const nuevaEntrada: CrearEntrada = {
@@ -444,8 +510,7 @@ export class ScaleComponent implements OnInit {
           });
 
           this.basculaService.fijarPesoSimulado(42850);
-          this.tare = 0;
-          this.net = 0;
+          this.limpiarSeleccionConsola();
           this.cargarDatos();
         },
         error: (err) =>
@@ -510,8 +575,7 @@ export class ScaleComponent implements OnInit {
           });
 
           this.basculaService.fijarPesoSimulado(24520);
-          this.tare = 0;
-          this.net = 0;
+          this.limpiarSeleccionConsola();
           this.cargarDatos();
         },
         error: (err) =>
@@ -519,14 +583,20 @@ export class ScaleComponent implements OnInit {
       });
   }
 
-  viewTransaction(t: Transaccion): void {
+  viewTransaction(t: Transaccion, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.dialog.open(TransactionDetailsDialogComponent, {
       width: '460px',
       data: t,
     });
   }
 
-  printTransaction(t: Transaccion): void {
+  printTransaction(t: Transaccion, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     const folio = Number(t.codigoEntrada || t.folio);
     this.notify.info('Imprimiendo ticket térmico 80mm', `Folio #${folio}`);
     this.basculaService.imprimirTicketTermico({

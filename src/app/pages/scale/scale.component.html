@@ -47,8 +47,12 @@
           <mat-icon>memory</mat-icon>
           <span>INDICADOR DIGITAL · CH-01</span>
         </div>
-        <span class="indicator-mode" [class.mode-exit]="tare > 0">
-          {{ tare > 0 ? 'MODO SALIDA' : 'MODO ENTRADA' }}
+        <span class="indicator-mode" [class.mode-exit]="!!selectedPendingTx">
+          {{
+            selectedPendingTx
+              ? 'MODO SALIDA · FOLIO #' + selectedPendingTx.folio
+              : 'MODO ENTRADA · NUEVO PESAJE'
+          }}
         </span>
       </div>
 
@@ -72,9 +76,9 @@
             <span class="led"></span>
             <span>CENTRO DE CERO</span>
           </div>
-          <div class="status-badge tare-led" [class.active]="tare > 0">
+          <div class="status-badge tare-led" [class.active]="!!selectedPendingTx">
             <span class="led"></span>
-            <span>NETO / TARA FIJA</span>
+            <span>{{ selectedPendingTx ? 'DESTARE ACTIVO (#' + selectedPendingTx.folio + ')' : 'SIN TARA VINCULADA' }}</span>
           </div>
         </div>
       </div>
@@ -84,14 +88,30 @@
     <section class="operational-panel">
       <div class="console-header">
         <span class="console-title">CONSOLA DE OPERACIÓN</span>
-        <span class="console-hint">Valores en kilogramos (kg)</span>
+        <span class="console-hint">
+          {{ selectedPendingTx ? 'Previsualizando salida en vivo' : 'Selecciona un camión en patio para destarar' }}
+        </span>
+      </div>
+
+      <!-- Banner del Camión Seleccionado (cuando se elige una fila pendiente de la tabla) -->
+      <div class="selected-truck-banner" *ngIf="selectedPendingTx as sel">
+        <div class="st-info">
+          <span class="st-folio">#{{ sel.folio }}</span>
+          <div class="st-text">
+            <strong>{{ sel.cliente }}</strong>
+            <span>{{ sel.chofer }} · {{ sel.tipo_operacion === 'RECEPCION' ? 'RECEPCIÓN' : 'DESPACHO' }}</span>
+          </div>
+        </div>
+        <button type="button" class="st-clear" (click)="limpiarSeleccionConsola()" matTooltip="Deseleccionar y volver a Modo Entrada">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
 
       <!-- Tarjetas de Desglose de Peso -->
       <div class="metrics-grid">
         <div class="metric-tile gross">
           <div class="metric-header">
-            <span class="metric-label">PESO BRUTO</span>
+            <span class="metric-label">{{ selectedPendingTx ? 'PESO ACTUAL (2DO)' : 'PESO EN PLATAFORMA' }}</span>
             <mat-icon class="metric-icon">local_shipping</mat-icon>
           </div>
           <div class="metric-value">
@@ -101,7 +121,7 @@
 
         <div class="metric-tile tare" [class.has-tare]="tare > 0">
           <div class="metric-header">
-            <span class="metric-label">TARA</span>
+            <span class="metric-label">{{ selectedPendingTx ? 'TARA (FOLIO #' + selectedPendingTx.folio + ')' : 'TARA DE ENTRADA' }}</span>
             <mat-icon class="metric-icon">balance</mat-icon>
           </div>
           <div class="metric-value">
@@ -111,8 +131,14 @@
 
         <div class="metric-tile net">
           <div class="net-left">
-            <span class="metric-label">PESO NETO CALCULADO</span>
-            <span class="net-formula">Diferencia Bruto − Tara</span>
+            <span class="metric-label">PESO NETO EN VIVO</span>
+            <span class="net-formula">
+              {{
+                selectedPendingTx
+                  ? (selectedPendingTx.tipo_operacion === 'RECEPCION' ? 'Recepción: Tara − Actual' : 'Despacho: Actual − Tara')
+                  : 'Seleccione un folio en planta para calcular neto'
+              }}
+            </span>
           </div>
           <div class="metric-value highlight">
             {{ net | number:'1.0-0' }} <small>{{ unit }}</small>
@@ -124,45 +150,62 @@
 
       <!-- Teclado de Mando Operativo -->
       <div class="controls-section">
-        <span class="controls-label">CONTROLES DE BÁSCULA</span>
+        <span class="controls-label">ACCIONES DE TERMINAL</span>
+
+        <div class="primary-actions">
+          <button
+            type="button"
+            class="key-btn key-primary"
+            [class.exit-action]="!!selectedPendingTx"
+            (click)="onAccionPrincipalConsola()"
+          >
+            <div class="key-primary-left">
+              <mat-icon>{{ selectedPendingTx ? 'flag' : 'login' }}</mat-icon>
+              <div class="key-text">
+                <span class="key-title">
+                  {{
+                    selectedPendingTx
+                      ? 'COMPLETAR SALIDA · FOLIO #' + selectedPendingTx.folio
+                      : 'REGISTRAR ENTRADA DE UNIDAD'
+                  }}
+                </span>
+                <span class="key-sub">
+                  {{
+                    selectedPendingTx
+                      ? 'Confirmar 2do pesaje e imprimir comprobante final'
+                      : 'Capturar 1er pesaje (Tara) e ingresar camión a patio'
+                  }}
+                </span>
+              </div>
+            </div>
+            <mat-icon class="key-arrow">arrow_forward</mat-icon>
+          </button>
+        </div>
 
         <div class="instrument-keys">
-          <button type="button" class="key-btn key-neutral" (click)="onTarar()">
-            <div class="key-icon-wrap">
-              <mat-icon>content_cut</mat-icon>
-            </div>
-            <div class="key-text">
-              <span class="key-title">TARAR</span>
-              <span class="key-sub">Fijar peso actual</span>
-            </div>
-          </button>
-
           <button type="button" class="key-btn key-neutral" (click)="onCero()">
             <div class="key-icon-wrap">
               <mat-icon>exposure_zero</mat-icon>
             </div>
             <div class="key-text">
-              <span class="key-title">CERO</span>
-              <span class="key-sub">Reiniciar lectura</span>
+              <span class="key-title">PONER A CERO</span>
+              <span class="key-sub">Calibrar lectura a 0 kg</span>
             </div>
           </button>
-        </div>
 
-        <div class="primary-actions">
-          <button type="button" class="key-btn key-primary" (click)="onImprimir()">
-            <div class="key-primary-left">
-              <mat-icon>print</mat-icon>
-              <div class="key-text">
-                <span class="key-title">REGISTRAR E IMPRIMIR</span>
-                <span class="key-sub">{{ tare > 0 ? 'Generar ticket de salida' : 'Generar ticket de entrada' }}</span>
-              </div>
+          <button
+            type="button"
+            class="key-btn key-neutral"
+            [disabled]="!selectedPendingTx"
+            (click)="limpiarSeleccionConsola()"
+          >
+            <div class="key-icon-wrap">
+              <mat-icon>swap_horiz</mat-icon>
             </div>
-            <mat-icon class="key-arrow">arrow_forward</mat-icon>
-          </button>
-
-          <button type="button" class="key-btn key-cancel" (click)="onCancelar()">
-            <mat-icon>restart_alt</mat-icon>
-            <span>Cancelar y limpiar operación</span>
+            <div class="key-text">
+              <span class="key-title">MODO ENTRADA</span>
+              <span class="key-sub">Deseleccionar folio activo</span>
+            </div>
           </button>
         </div>
       </div>
@@ -291,19 +334,30 @@
             <th mat-header-cell *matHeaderCellDef class="actions-col"> Acciones </th>
             <td mat-cell *matCellDef="let t" class="actions-col">
               <div class="action-buttons">
+                <button
+                  type="button"
+                  class="action-icon-btn select-console"
+                  *ngIf="esPendiente(t)"
+                  [class.active]="esSeleccionado(t)"
+                  (click)="seleccionarCamionEnPatio(t, $event)"
+                  matTooltip="Cargar Tara en consola para ver Peso Neto en vivo"
+                >
+                  <mat-icon>{{ esSeleccionado(t) ? 'check_circle' : 'speed' }}</mat-icon>
+                  <span>{{ esSeleccionado(t) ? 'En Consola' : 'Destarar' }}</span>
+                </button>
                 <button type="button" class="action-icon-btn finish" *ngIf="esPendiente(t)"
-                        (click)="onFinalizarSalida(t)" matTooltip="Registrar peso de salida">
+                        (click)="onFinalizarSalida(t, $event)" matTooltip="Registrar peso de salida">
                   <mat-icon>flag</mat-icon>
                   <span>Cerrar Salida</span>
                 </button>
                 <button type="button" class="action-icon-btn cancel-entry" *ngIf="esPendiente(t)"
-                        (click)="onAnularEntrada(t)" matTooltip="Anular / Cancelar Pesaje de Entrada">
+                        (click)="onAnularEntrada(t, $event)" matTooltip="Anular / Cancelar Pesaje de Entrada">
                   <mat-icon>delete_outline</mat-icon>
                 </button>
-                <button type="button" class="action-icon-btn" (click)="viewTransaction(t)" matTooltip="Ver comprobante">
+                <button type="button" class="action-icon-btn" (click)="viewTransaction(t, $event)" matTooltip="Ver comprobante">
                   <mat-icon>visibility</mat-icon>
                 </button>
-                <button type="button" class="action-icon-btn" (click)="printTransaction(t)" matTooltip="Imprimir ticket térmico 80mm">
+                <button type="button" class="action-icon-btn" (click)="printTransaction(t, $event)" matTooltip="Imprimir ticket térmico 80mm">
                   <mat-icon>print</mat-icon>
                 </button>
               </div>
@@ -311,7 +365,13 @@
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns;"
+            [class.clickable-pending]="esPendiente(row)"
+            [class.selected-row]="esSeleccionado(row)"
+            (click)="esPendiente(row) ? seleccionarCamionEnPatio(row) : null"
+          ></tr>
         </table>
 
         <div class="no-data" *ngIf="recentTransactions.length === 0">
