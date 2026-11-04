@@ -70,6 +70,72 @@
     flex-wrap: wrap;
   }
 
+  .sim-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+
+    .sim-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.04em;
+    }
+
+    .sim-chip {
+      height: 26px;
+      padding: 0 8px;
+      border-radius: 6px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #1e293b;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #0f172a;
+        border-color: #0f172a;
+        color: #ffffff;
+      }
+    }
+  }
+
+  .btn-serial {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: #2563eb;
+    }
+
+    &:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+  }
+
   .meta-pill {
     display: flex;
     align-items: center;
@@ -499,7 +565,6 @@
   }
 }
 
-/* Botones de instrumento: TARAR y CERO */
 .key-neutral {
   background: #ffffff;
   border: 1px solid #cbd5e1;
@@ -555,7 +620,6 @@
   }
 }
 
-/* Botón Principal: REGISTRAR E IMPRIMIR */
 .key-primary {
   justify-content: space-between;
   padding: 14px 18px;
@@ -613,7 +677,6 @@
   }
 }
 
-/* Botón Secundario de Cancelación: Discreto y Limpio */
 .key-cancel {
   justify-content: center;
   gap: 8px;
@@ -787,6 +850,37 @@
   border-radius: 6px;
 }
 
+/* Badge de Tipo de Operación (DESPACHO / RECEPCION) */
+.op-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+
+  &.despacho {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+
+  &.recepcion {
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
+}
+
 .cell-primary {
   font-weight: 600;
   color: #0f172a;
@@ -827,6 +921,7 @@
   border-radius: 999px;
   font-size: 0.74rem;
   font-weight: 600;
+  white-space: nowrap;
 
   .status-dot {
     width: 6px;
@@ -851,6 +946,16 @@
 
     .status-dot {
       background: #f59e0b;
+    }
+  }
+
+  &.cancelled {
+    background: #fff1f2;
+    color: #9f1239;
+    border: 1px solid #fecdd3;
+
+    .status-dot {
+      background: #e11d48;
     }
   }
 }
@@ -908,6 +1013,12 @@
       background: #1e293b;
     }
   }
+
+  &.cancel-entry:hover {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #be123c;
+  }
 }
 
 .no-data {
@@ -929,5 +1040,95 @@
   p {
     margin: 0;
     font-size: 0.9rem;
+  }
+}
+
+/* ============================================================
+   Ticket Térmico 80mm (Oculto en pantalla, visible en @media print)
+   ============================================================ */
+.thermal-ticket-80mm {
+  display: none;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  color: #000000;
+  background: #ffffff;
+  font-size: 11px;
+  line-height: 1.35;
+
+  .tk-header {
+    text-align: center;
+    margin-bottom: 6px;
+
+    h2 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .tk-sub {
+      margin: 2px 0;
+      font-size: 9px;
+    }
+
+    .tk-type {
+      margin: 4px 0 0;
+      font-size: 10px;
+      font-weight: 700;
+    }
+  }
+
+  .tk-divider {
+    text-align: center;
+    margin: 6px 0;
+    font-size: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .tk-meta,
+  .tk-weights {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .tk-row,
+  .tk-w-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .tk-net {
+    font-size: 13px;
+    font-weight: 800;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px dashed #000;
+  }
+
+  .tk-notes {
+    margin: 6px 0;
+    font-size: 10px;
+  }
+
+  .tk-signature {
+    text-align: center;
+    margin-top: 22px;
+
+    .tk-sig-line {
+      margin-bottom: 4px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    small {
+      display: block;
+      margin-top: 4px;
+      font-size: 9px;
+    }
   }
 }

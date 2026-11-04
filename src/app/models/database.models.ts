@@ -1,3 +1,5 @@
+export type TipoOperacion = 'DESPACHO' | 'RECEPCION';
+
 export interface Usuario {
   id?: number;
   nombre: string;
@@ -32,10 +34,14 @@ export interface EntradaBascula {
   codigoEntrada: number;
   nombre_chofer: string;
   id_material: number;
-  cliente: string; 
+  material?: string;
+  cliente: string;
+  placa?: string;
   tara: number;
+  tipo_operacion?: TipoOperacion;
   fecha_entrada?: string;
   activo: number;
+  motivo_cancelacion?: string;
 }
 
 export interface SalidaBascula {
@@ -54,12 +60,16 @@ export interface CrearEntrada {
   id_material: number;
   cliente: string;
   tara: number;
+  tipo_operacion: TipoOperacion;
+  placa?: string;
+  observaciones?: string;
 }
 
 /** Body de POST /api/salida. El backend calcula el `neto` y cierra la entrada. */
 export interface CrearSalida {
   codigoEntrada: number;
   bruto: number;
+  tipo_operacion?: TipoOperacion;
 }
 
 /** Respuesta de POST /api/salida: el backend devuelve el neto calculado. */
@@ -68,18 +78,31 @@ export interface SalidaResponse {
   neto: number;
 }
 
-/** Fila del historial de transacciones que devuelve el backend (/transacciones). */
+/** Body de POST /api/entrada/:id/cancelar. */
+export interface CancelarEntradaRequest {
+  motivo: string;
+  motivo_cancelacion?: string;
+}
+
+/** Fila del historial de transacciones que devuelve el backend (/transacciones - vista_transacciones). */
 export interface Transaccion {
   id?: number;
+  id_entrada?: number;
   folio: number;
   codigoEntrada?: number;
   cliente: string;
   chofer: string;
+  nombre_chofer?: string;
   placa?: string;
   id_material?: number;
+  material?: string;
+  tipo_operacion?: TipoOperacion;
   tara: number;
   bruto?: number;
   neto?: number;
   fecha?: string;
-  estado: 'completado' | 'pendiente';
+  fecha_entrada?: string;
+  fecha_salida?: string;
+  estado: 'completado' | 'pendiente' | 'cancelado';
+  motivo_cancelacion?: string;
 }

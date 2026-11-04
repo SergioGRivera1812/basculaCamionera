@@ -20,6 +20,13 @@
             "outputPath": "dist/bascula-camionera",
             "index": "src/index.html",
             "browser": "src/main.ts",
+            "allowedCommonJsDependencies": [
+              "canvg",
+              "html2canvas",
+              "rgbcolor",
+              "raf",
+              "core-js"
+            ],
             "polyfills": [
               "zone.js"
             ],

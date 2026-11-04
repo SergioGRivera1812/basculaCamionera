@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ClientesService } from '../../../../services/clientes.service';
 import { ChoferesService } from '../../../../services/choferes.service';
 import { MaterialesService } from '../../../../services/materiales.service';
-import { Cliente, Chofer, Material } from '../../../../models/database.models';
+import { Cliente, Chofer, Material, TipoOperacion } from '../../../../models/database.models';
 
 @Component({
   selector: 'app-weighing-form-dialog',
@@ -44,23 +44,43 @@ import { Cliente, Chofer, Material } from '../../../../models/database.models';
         <!-- Pantalla Digital de Lectura -->
         <div class="weight-readout">
           <div class="readout-main">
-            <span class="readout-label">{{ data.type === 'salida' ? 'PESO BRUTO DETECTADO' : 'TARA DETECTADA' }}</span>
+            <span class="readout-label">
+              {{ data.type === 'salida' ? 'PESO ACTUAL EN BÁSCULA' : 'PESO INICIAL (TARA)' }}
+              · {{ tipoOperacionActual === 'RECEPCION' ? 'RECEPCIÓN' : 'DESPACHO' }}
+            </span>
             <div class="readout-value">{{ data.weight | number:'1.0-0' }} <small>kg</small></div>
           </div>
 
           <div class="readout-breakdown" *ngIf="data.type === 'salida'">
             <div class="breakdown-item">
-              <span>Tara Entrada</span>
+              <span>1er Pesaje (Tara)</span>
               <strong>{{ (data.tare || 0) | number:'1.0-0' }} kg</strong>
             </div>
             <div class="breakdown-item net">
-              <span>Peso Neto</span>
-              <strong>{{ (data.weight - (data.tare || 0)) | number:'1.0-0' }} kg</strong>
+              <span>Neto ({{ tipoOperacionActual === 'RECEPCION' ? 'Tara − Actual' : 'Actual − Tara' }})</span>
+              <strong [class.warn-net]="netoPrevisualizado < 0">{{ netoPrevisualizado | number:'1.0-0' }} kg</strong>
             </div>
           </div>
         </div>
 
         <form [formGroup]="weighingForm" class="form-container">
+          <!-- Tipo de Operación -->
+          <div class="form-section">
+            <h3 class="section-title"><mat-icon>swap_horiz</mat-icon> Modalidad Operativa</h3>
+            <div class="single-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo de Operación</mat-label>
+                <mat-select formControlName="tipo_operacion">
+                  <mat-option value="DESPACHO">DESPACHO · Salida de Material / Venta (Entra vacío, sale cargado)</mat-option>
+                  <mat-option value="RECEPCION">RECEPCION · Entrada de Material / Compra / Descarga (Entra cargado, sale vacío)</mat-option>
+                </mat-select>
+                <mat-icon matPrefix>sync_alt</mat-icon>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="section-divider"></div>
+
           <div class="form-section">
             <h3 class="section-title"><mat-icon>local_shipping</mat-icon> Identificación de Unidad</h3>
             <div class="grid-row">
@@ -201,6 +221,7 @@ import { Cliente, Chofer, Material } from '../../../../models/database.models';
       align-items: center;
       justify-content: space-between;
       gap: 16px;
+      flex-wrap: wrap;
 
       .readout-main {
         .readout-label {
@@ -231,25 +252,29 @@ import { Cliente, Chofer, Material } from '../../../../models/database.models';
         .breakdown-item {
           display: flex;
           flex-direction: column;
-          span { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; }
+          span { font-size: 0.68rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; }
           strong { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: #e2e8f0; margin-top: 2px; }
-          &.net strong { color: #ffffff; font-size: 1.15rem; }
+          &.net strong {
+            color: #34d399;
+            font-size: 1.18rem;
+            &.warn-net { color: #fbbf24; }
+          }
         }
       }
     }
 
-    .form-section { padding: 6px 0; }
+    .form-section { padding: 4px 0; }
     .section-divider { height: 1px; background: #f1f5f9; margin: 4px 0 10px; }
     .section-title {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 700;
       color: #475569;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      margin: 0 0 12px;
+      margin: 0 0 10px;
       mat-icon { font-size: 17px; width: 17px; height: 17px; color: #64748b; }
     }
     .grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -316,7 +341,9 @@ export class WeighingFormDialogComponent implements OnInit {
     private choferesSrv: ChoferesService,
     private materialesSrv: MaterialesService
   ) {
+    const defaultTipo: TipoOperacion = data.tipo_operacion || 'DESPACHO';
     this.weighingForm = this.fb.group({
+      tipo_operacion: [defaultTipo, Validators.required],
       codigoEntrada: [data.codigoEntrada || ''],
       plate: [data.plate || '', [Validators.required]],
       driver: [data.driver || '', Validators.required],
@@ -326,6 +353,24 @@ export class WeighingFormDialogComponent implements OnInit {
     });
   }
 
+  get tipoOperacionActual(): TipoOperacion {
+    return (this.weighingForm.get('tipo_operacion')?.value as TipoOperacion) || 'DESPACHO';
+  }
+
+  /**
+   * Cálculo del Peso Neto en tiempo real según el Tipo de Operación:
+   * - DESPACHO (venta / carga): neto = pesoActual - tara
+   * - RECEPCION (compra / descarga): neto = tara - pesoActual
+   */
+  get netoPrevisualizado(): number {
+    const pesoActual = Number(this.data.weight) || 0;
+    const tara = Number(this.data.tare) || 0;
+    if (this.tipoOperacionActual === 'RECEPCION') {
+      return tara - pesoActual;
+    }
+    return pesoActual - tara;
+  }
+
   ngOnInit(): void {
     this.loadData();
   }
@@ -333,7 +378,16 @@ export class WeighingFormDialogComponent implements OnInit {
   loadData(): void {
     this.clientesSrv.getClientes().subscribe(res => this.clientes = res);
     this.choferesSrv.getChoferes().subscribe(res => this.choferes = res);
-    this.materialesSrv.getMateriales().subscribe(res => this.materiales = res);
+    this.materialesSrv.getMateriales().subscribe(res => {
+      this.materiales = res;
+      // Si no venía product_id pero venía nombre de material, seleccionarlo automáticamente
+      if (!this.weighingForm.get('product_id')?.value && this.data.material) {
+        const match = res.find(m => m.nombre?.toLowerCase() === String(this.data.material).toLowerCase());
+        if (match?.id) {
+          this.weighingForm.patchValue({ product_id: match.id });
+        }
+      }
+    });
   }
 
   onCancel(): void {
@@ -342,11 +396,14 @@ export class WeighingFormDialogComponent implements OnInit {
 
   onSave(): void {
     if (this.weighingForm.valid) {
+      const selectedMat = this.materiales.find(m => m.id === this.weighingForm.value.product_id);
       this.dialogRef.close({
         ...this.weighingForm.value,
+        materialNombre: selectedMat?.nombre || this.data.material || 'MATERIAL GENERAL',
         type: this.data.type,
         weight: this.data.weight,
-        tare: this.data.tare
+        tare: this.data.tare,
+        netoCalculado: this.netoPrevisualizado,
       });
     }
   }

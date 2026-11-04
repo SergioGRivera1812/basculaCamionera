@@ -1,7 +1,8 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { BasculaService } from '../../../../services/bascula.service';
 
 @Component({
   selector: 'app-transaction-details-dialog',
@@ -29,9 +30,9 @@ import { MatIconModule } from '@angular/material/icon';
             <span class="value mono">{{ (data.fecha || data.fecha_entrada || data.fecha_salida) | date:'dd/MM/yyyy HH:mm' }}</span>
           </div>
           <div class="info-item">
-            <span class="label">ESTADO OPERATIVO</span>
-            <span class="status-tag" [class.completed]="data.estado === 'completado' || data.activo === 0">
-              {{ (data.estado === 'completado' || data.activo === 0) ? 'COMPLETADO' : 'EN PLANTA · SIN SALIDA' }}
+            <span class="label">TIPO DE OPERACIÓN</span>
+            <span class="op-tag" [class.recepcion]="data.tipo_operacion === 'RECEPCION'">
+              {{ data.tipo_operacion === 'RECEPCION' ? 'RECEPCIÓN (DESCARGA)' : 'DESPACHO (CARGA)' }}
             </span>
           </div>
           <div class="info-item full">
@@ -42,19 +43,41 @@ import { MatIconModule } from '@angular/material/icon';
             <span class="label">OPERADOR / CHOFER</span>
             <span class="value">{{ data.chofer || data.nombre_chofer }}</span>
           </div>
+          <div class="info-item">
+            <span class="label">MATERIAL / PRODUCTO</span>
+            <span class="value">{{ data.material || 'Material #' + (data.id_material || 1) }}</span>
+          </div>
           <div class="info-item" *ngIf="data.placa">
             <span class="label">PLACA</span>
             <span class="value mono">{{ data.placa }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">ESTADO OPERATIVO</span>
+            <span class="status-tag"
+                  [class.completed]="data.estado === 'completado'"
+                  [class.cancelled]="data.estado === 'cancelado'">
+              {{
+                data.estado === 'cancelado'
+                  ? 'CANCELADO / ANULADO'
+                  : (data.estado === 'completado' || data.activo === 0)
+                  ? 'COMPLETADO'
+                  : 'EN PLANTA · SIN SALIDA'
+              }}
+            </span>
+          </div>
+          <div class="info-item full" *ngIf="data.motivo_cancelacion">
+            <span class="label">MOTIVO DE CANCELACIÓN</span>
+            <span class="value">{{ data.motivo_cancelacion }}</span>
           </div>
         </div>
 
         <div class="weights-box">
           <div class="weight-row">
-            <span class="w-label">TARA (ENTRADA)</span>
+            <span class="w-label">TARA (1ER PESAJE)</span>
             <span class="w-val">{{ (data.tara || 0) | number:'1.0-0' }} <small>kg</small></span>
           </div>
           <div class="weight-row">
-            <span class="w-label">PESO BRUTO (SALIDA)</span>
+            <span class="w-label">PESO BRUTO (2DO PESAJE)</span>
             <span class="w-val">{{ (data.bruto || 0) | number:'1.0-0' }} <small>kg</small></span>
           </div>
           <div class="weight-row net">
@@ -73,7 +96,7 @@ import { MatIconModule } from '@angular/material/icon';
         <button type="button" class="btn-close" (click)="onClose()">Cerrar</button>
         <button type="button" class="btn-print" (click)="onPrint()">
           <mat-icon>print</mat-icon>
-          <span>Reimprimir Ticket</span>
+          <span>Imprimir Ticket 80mm</span>
         </button>
       </footer>
     </div>
@@ -155,6 +178,24 @@ import { MatIconModule } from '@angular/material/icon';
           &.strong { font-weight: 700; color: #0f172a; font-size: 0.96rem; }
           &.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
         }
+      }
+    }
+
+    .op-tag {
+      display: inline-flex;
+      align-self: flex-start;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+
+      &.recepcion {
+        background: #f0fdf4;
+        color: #15803d;
+        border-color: #bbf7d0;
       }
     }
 
@@ -278,6 +319,8 @@ import { MatIconModule } from '@angular/material/icon';
   `]
 })
 export class TransactionDetailsDialogComponent {
+  private readonly basculaSrv = inject(BasculaService);
+
   constructor(
     public dialogRef: MatDialogRef<TransactionDetailsDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
@@ -288,7 +331,20 @@ export class TransactionDetailsDialogComponent {
   }
 
   onPrint(): void {
-    console.log('Imprimiendo ticket...', this.data);
+    this.basculaSrv.imprimirTicketTermico({
+      folio: this.data.codigoEntrada || this.data.folio || this.data.id,
+      tipo_operacion: this.data.tipo_operacion || 'DESPACHO',
+      fecha_entrada: this.data.fecha_entrada || this.data.fecha,
+      fecha_salida: this.data.fecha_salida,
+      chofer: this.data.chofer || this.data.nombre_chofer,
+      placa: this.data.placa,
+      cliente: this.data.cliente,
+      material: this.data.material || `Material #${this.data.id_material || 1}`,
+      tara: Number(this.data.tara) || 0,
+      bruto: Number(this.data.bruto) || 0,
+      neto: Number(this.data.neto) || 0,
+      estado: (this.data.estado === 'completado' || this.data.activo === 0) ? 'COMPLETADO' : 'EN PLANTA (ENTRADA)',
+    });
     this.dialogRef.close();
   }
 }

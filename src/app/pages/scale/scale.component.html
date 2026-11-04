@@ -1,17 +1,29 @@
 <div class="scale-page">
-  <!-- Encabezado de Terminal -->
-  <header class="terminal-header">
+  <!-- Encabezado de Terminal (Oculto en @media print) -->
+  <header class="terminal-header no-print">
     <div class="terminal-title-group">
       <div class="terminal-icon-box">
         <mat-icon>scale</mat-icon>
       </div>
       <div>
         <h1>Terminal de Pesaje</h1>
-        <p class="terminal-subtitle">Plataforma Camionera #01 · Monitoreo de Carga</p>
+        <p class="terminal-subtitle">Plataforma Camionera #01 · {{ etiquetaModo() }}</p>
       </div>
     </div>
 
     <div class="terminal-meta">
+      <!-- Controles rápidos de simulación cuando no hay puerto serial físico -->
+      <div class="sim-controls" *ngIf="modoConexion() === 'simulacion'">
+        <span class="sim-label">SIMULAR PESO:</span>
+        <button type="button" class="sim-chip" (click)="onSimularPeso(14800)" matTooltip="Simular camión vacío (14,800 kg)">14.8t Vacío</button>
+        <button type="button" class="sim-chip" (click)="onSimularPeso(42650)" matTooltip="Simular camión cargado (42,650 kg)">42.6t Cargado</button>
+      </div>
+
+      <button type="button" class="btn-serial" (click)="onConectarSerial()" matTooltip="Conectar indicador físico por Web Serial API (RS-232 / USB)">
+        <mat-icon>usb</mat-icon>
+        <span>{{ modoConexion() === 'serial' ? 'Serial Conectado' : 'Conectar Puerto Serial' }}</span>
+      </button>
+
       <div class="meta-pill">
         <span class="meta-label">En Planta</span>
         <span class="meta-value">{{ enPlantaCount }}</span>
@@ -27,7 +39,7 @@
     </div>
   </header>
 
-  <div class="scale-container">
+  <div class="scale-container no-print">
     <!-- Panel de Indicador de Peso (Izquierda) -->
     <section class="weight-panel">
       <div class="indicator-top-bar">
@@ -52,7 +64,7 @@
         </div>
 
         <div class="indicator-status">
-          <div class="status-badge" [class.active]="currentWeight > 0">
+          <div class="status-badge" [class.active]="lecturaEstable() && currentWeight > 0">
             <span class="led"></span>
             <span>ESTABLE</span>
           </div>
@@ -161,12 +173,12 @@
       <div class="panel-header">
         <div class="header-left">
           <div class="title-with-count">
-            <h3>Últimas Transacciones</h3>
+            <h3>Unidades en Patio e Historial</h3>
             <span class="count-chip">{{ dataSource.filteredData.length }} registros</span>
           </div>
           <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
             <mat-label>Filtrar historial</mat-label>
-            <input matInput (keyup)="applyFilter($event)" placeholder="Folio, Cliente, Chofer o Placa..." #input>
+            <input matInput (keyup)="applyFilter($event)" placeholder="Folio, Operación, Cliente, Chofer o Placa..." #input>
             <mat-icon matPrefix>search</mat-icon>
           </mat-form-field>
         </div>
@@ -183,6 +195,23 @@
             <th mat-header-cell *matHeaderCellDef> Folio </th>
             <td mat-cell *matCellDef="let t">
               <span class="folio-badge">#{{ t.folio }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Tipo de Operación (DESPACHO / RECEPCION) -->
+          <ng-container matColumnDef="tipo_operacion">
+            <th mat-header-cell *matHeaderCellDef> Operación </th>
+            <td mat-cell *matCellDef="let t">
+              <span class="op-badge" [class.recepcion]="t.tipo_operacion === 'RECEPCION'" [class.despacho]="t.tipo_operacion !== 'RECEPCION'">
+                <mat-icon>{{ t.tipo_operacion === 'RECEPCION' ? 'south_west' : 'north_east' }}</mat-icon>
+                <span>
+                  {{
+                    t.tipo_operacion === 'RECEPCION'
+                      ? (esPendiente(t) ? 'RECEPCIÓN · Por Descargar' : 'RECEPCIÓN · Descarga')
+                      : (esPendiente(t) ? 'DESPACHO · Por Cargar' : 'DESPACHO · Carga')
+                  }}
+                </span>
+              </span>
             </td>
           </ng-container>
 
@@ -230,7 +259,7 @@
           <ng-container matColumnDef="fecha">
             <th mat-header-cell *matHeaderCellDef> Fecha </th>
             <td mat-cell *matCellDef="let t" class="date-cell">
-              {{ t.fecha | date:'dd/MM/yyyy HH:mm' }}
+              {{ (t.fecha || t.fecha_entrada) | date:'dd/MM/yyyy HH:mm' }}
             </td>
           </ng-container>
 
@@ -238,9 +267,21 @@
           <ng-container matColumnDef="estado">
             <th mat-header-cell *matHeaderCellDef> Estado </th>
             <td mat-cell *matCellDef="let t">
-              <span class="status-indicator" [class.completed]="t.estado === 'completado'" [class.pending]="t.estado === 'pendiente'">
+              <span
+                class="status-indicator"
+                [class.completed]="t.estado === 'completado'"
+                [class.pending]="t.estado === 'pendiente'"
+                [class.cancelled]="t.estado === 'cancelado'"
+                [matTooltip]="t.motivo_cancelacion ? 'Motivo: ' + t.motivo_cancelacion : ''"
+              >
                 <span class="status-dot"></span>
-                {{ t.estado === 'completado' ? 'Completado' : 'En Planta · Sin Salida' }}
+                {{
+                  t.estado === 'cancelado'
+                    ? 'Cancelado / Anulado'
+                    : t.estado === 'completado'
+                    ? 'Completado'
+                    : 'En Planta · Sin Salida'
+                }}
               </span>
             </td>
           </ng-container>
@@ -250,23 +291,27 @@
             <th mat-header-cell *matHeaderCellDef class="actions-col"> Acciones </th>
             <td mat-cell *matCellDef="let t" class="actions-col">
               <div class="action-buttons">
-                <button type="button" class="action-icon-btn finish" *ngIf="t.estado === 'pendiente'"
+                <button type="button" class="action-icon-btn finish" *ngIf="esPendiente(t)"
                         (click)="onFinalizarSalida(t)" matTooltip="Registrar peso de salida">
                   <mat-icon>flag</mat-icon>
                   <span>Cerrar Salida</span>
                 </button>
+                <button type="button" class="action-icon-btn cancel-entry" *ngIf="esPendiente(t)"
+                        (click)="onAnularEntrada(t)" matTooltip="Anular / Cancelar Pesaje de Entrada">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
                 <button type="button" class="action-icon-btn" (click)="viewTransaction(t)" matTooltip="Ver comprobante">
                   <mat-icon>visibility</mat-icon>
                 </button>
-                <button type="button" class="action-icon-btn" (click)="printTransaction(t)" matTooltip="Reimprimir ticket">
+                <button type="button" class="action-icon-btn" (click)="printTransaction(t)" matTooltip="Imprimir ticket térmico 80mm">
                   <mat-icon>print</mat-icon>
                 </button>
               </div>
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones'];"></tr>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
         </table>
 
         <div class="no-data" *ngIf="recentTransactions.length === 0">
@@ -276,4 +321,86 @@
       </div>
     </section>
   </div>
+
+  <!-- ============================================================
+       Vista Oculta de Impresión Térmica (Formato 80mm - @media print)
+       ============================================================ -->
+  <section class="thermal-ticket-80mm" *ngIf="ticketActual() as tk" aria-hidden="true">
+    <div class="tk-header">
+      <h2>BÁSCULA CAMIONERA CENTRAL</h2>
+      <p class="tk-sub">SISTEMA DE CONTROL DE PESAJE · BASCU-SYS</p>
+      <p class="tk-type">COMPROBANTE OFICIAL DE {{ tk.tipo_operacion }}</p>
+    </div>
+
+    <div class="tk-divider">------------------------------------------</div>
+
+    <div class="tk-meta">
+      <div class="tk-row">
+        <span>FOLIO DE ENTRADA:</span>
+        <strong>#{{ tk.folio }}</strong>
+      </div>
+      <div class="tk-row">
+        <span>OPERACIÓN:</span>
+        <strong>{{ tk.tipo_operacion === 'RECEPCION' ? 'RECEPCIÓN (COMPRA)' : 'DESPACHO (VENTA)' }}</strong>
+      </div>
+      <div class="tk-row">
+        <span>FECHA EMISIÓN:</span>
+        <span>{{ (tk.fecha_salida || tk.fecha_entrada) | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+      <div class="tk-row">
+        <span>ESTADO:</span>
+        <strong>{{ tk.estado }}</strong>
+      </div>
+    </div>
+
+    <div class="tk-divider">------------------------------------------</div>
+
+    <div class="tk-meta">
+      <div class="tk-row">
+        <span>CLIENTE/PROV:</span>
+        <strong>{{ tk.cliente }}</strong>
+      </div>
+      <div class="tk-row">
+        <span>CHOFER:</span>
+        <span>{{ tk.chofer }}</span>
+      </div>
+      <div class="tk-row" *ngIf="tk.placa">
+        <span>PLACA UNIDAD:</span>
+        <strong>{{ tk.placa }}</strong>
+      </div>
+      <div class="tk-row">
+        <span>MATERIAL:</span>
+        <strong>{{ tk.material }}</strong>
+      </div>
+    </div>
+
+    <div class="tk-divider">==========================================</div>
+
+    <div class="tk-weights">
+      <div class="tk-w-row">
+        <span>TARA (1ER PESAJE):</span>
+        <strong>{{ tk.tara | number:'1.0-0' }} kg</strong>
+      </div>
+      <div class="tk-w-row" *ngIf="tk.bruto">
+        <span>BRUTO (2DO PESAJE):</span>
+        <strong>{{ tk.bruto | number:'1.0-0' }} kg</strong>
+      </div>
+      <div class="tk-w-row tk-net" *ngIf="tk.neto != null">
+        <span>PESO NETO OFICIAL:</span>
+        <strong>{{ tk.neto | number:'1.0-0' }} kg</strong>
+      </div>
+    </div>
+
+    <div class="tk-divider">==========================================</div>
+
+    <div class="tk-notes" *ngIf="tk.observaciones">
+      <span>OBSERVACIONES: {{ tk.observaciones }}</span>
+    </div>
+
+    <div class="tk-signature">
+      <div class="tk-sig-line">________________________________</div>
+      <p>FIRMA Y SELLO DEL OPERADOR</p>
+      <small>Conserve este ticket para control de salida</small>
+    </div>
+  </section>
 </div>
