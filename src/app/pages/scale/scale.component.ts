@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { WeighingFormDialogComponent } from './components/weighing-form-dialog/weighing-form-dialog.component';
 import { TransactionDetailsDialogComponent } from './components/transaction-details-dialog/transaction-details-dialog.component';
 import { BasculaService } from '../../services/bascula.service';
@@ -23,6 +24,7 @@ import { EntradaBascula, CrearEntrada, CrearSalida, Transaccion } from '../../mo
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
+    MatTooltipModule,
   ],
   templateUrl: './scale.component.html',
   styleUrl: './scale.component.scss',
@@ -33,6 +35,7 @@ export class ScaleComponent implements OnInit {
   private readonly notify = inject(NotificationService);
   private readonly basculaService = inject(BasculaService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   currentWeight = 0;
   tare = 0;
@@ -44,6 +47,10 @@ export class ScaleComponent implements OnInit {
   recentTransactions: Transaccion[] = [];
   entradasActivas: EntradaBascula[] = [];
   dataSource = new MatTableDataSource<Transaccion>([]);
+
+  get enPlantaCount(): number {
+    return this.recentTransactions.filter((t) => t.estado === 'pendiente').length;
+  }
 
   constructor() {
     // Simulación de peso en tiempo real
@@ -59,7 +66,10 @@ export class ScaleComponent implements OnInit {
     this.basculaService
       .getEntradasActivas()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((data) => (this.entradasActivas = data));
+      .subscribe((data) => {
+        this.entradasActivas = data;
+        this.cdr.markForCheck();
+      });
 
     this.basculaService
       .getHistorialCompleto()
@@ -74,6 +84,7 @@ export class ScaleComponent implements OnInit {
             `${row.folio} ${row.cliente} ${row.chofer} ${row.placa || ''}`.toLowerCase();
           return searchStr.includes(filter);
         };
+        this.cdr.markForCheck();
       });
   }
 

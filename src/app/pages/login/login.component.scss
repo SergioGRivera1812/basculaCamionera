@@ -1,101 +1,229 @@
-$card-max-width: 420px;
-
-.login-container {
+.login-page {
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-  // Degradado de marca en lugar de un azul plano.
-  background: linear-gradient(
-    135deg,
-    var(--brand-dark) 0%,
-    var(--brand-navy) 45%,
-    var(--brand-primary) 100%
-  );
+  padding: 24px;
+  background-color: #0f172a;
+  background-image:
+    radial-gradient(at 20% 20%, rgba(37, 99, 235, 0.22) 0px, transparent 50%),
+    radial-gradient(at 80% 80%, rgba(30, 58, 138, 0.28) 0px, transparent 55%),
+    linear-gradient(145deg, #0b1120 0%, #1e293b 55%, #0f172a 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .login-card {
-  max-width: $card-max-width;
   width: 100%;
-  padding: 36px 32px;
+  max-width: 420px;
+  background: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(15, 23, 42, 0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.brand {
-  text-align: center;
-  margin-bottom: 28px;
+/* ============================================================
+   Cabecera Oscura (Mismo lenguaje que el Sidebar y la Báscula)
+   ============================================================ */
+.card-header {
+  background: #f8fafc;
+  padding: 22px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
 
   .brand-badge {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 14px;
-    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--brand-accent), var(--brand-primary));
-    box-shadow: 0 6px 16px rgba(34, 130, 219, 0.4);
+    color: #60a5fa;
 
     mat-icon {
-      color: #fff;
-      font-size: 34px;
-      width: 34px;
-      height: 34px;
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
     }
   }
 
-  .brand-name {
-    margin: 0;
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    color: var(--brand-navy);
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+
+    .brand-name {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: #0f172a;
+      line-height: 1.15;
+    }
+
+    .brand-sub {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-top: 2px;
+    }
   }
 
-  .brand-subtitle {
-    margin: 4px 0 0;
-    font-size: 0.85rem;
-    color: var(--text-muted);
+  .online-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+    }
   }
+}
+
+/* ============================================================
+   Cuerpo del Formulario
+   ============================================================ */
+.card-body {
+  padding: 28px 28px 24px;
+}
+
+.welcome-block {
+  margin-bottom: 22px;
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.84rem;
+    color: #64748b;
+  }
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .full-width {
   width: 100%;
-  margin-bottom: 8px;
 }
 
-.login-button {
-  height: 46px;
-  margin-top: 12px;
-  font-size: 1.05rem;
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #be123c;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.83rem;
   font-weight: 600;
+  margin-bottom: 6px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+}
+
+.btn-submit {
+  width: 100%;
+  height: 46px;
+  margin-top: 8px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: #1e293b;
+  border: 1px solid #0f172a;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.14);
+  transition: all 0.16s ease;
 
-  .btn-spinner {
-    display: inline-block;
+  .btn-arrow {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #60a5fa;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover:not(:disabled) {
+    background: #0f172a;
+
+    .btn-arrow {
+      transform: translateX(3px);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
   }
 }
 
-.error-message {
+/* ============================================================
+   Pie de Tarjeta
+   ============================================================ */
+.card-footer {
+  padding: 13px 26px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #c0392b;
-  background-color: #fdecea;
-  border: 1px solid #f5c6cb;
-  padding: 10px 12px;
-  margin-bottom: 14px;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  justify-content: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 500;
 
   mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    color: #94a3b8;
   }
 }

@@ -1,124 +1,279 @@
-<div class="scale-container">
-  <!-- Panel de Indicador de Peso (Izquierda) -->
-  <div class="weight-panel">
-    <div class="indicator-header">
-      <span class="indicator-label">PESO ACTUAL</span>
-    </div>
-    <div class="indicator-display">
-      <span class="weight-value">{{ currentWeight | number:'1.0-0' }}</span>
-      <span class="weight-unit">{{ unit }}</span>
-    </div>
-    <div class="indicator-status">
-      <span class="status-badge stable">ESTABLE</span>
-      <span class="status-badge zero">CERO</span>
-    </div>
-  </div>
-
-  <!-- Panel de Información Operativa (Derecha) -->
-  <div class="operational-panel">
-    <div class="info-card gross">
-      <div class="card-label">BRUTO</div>
-      <div class="card-value">{{ gross | number:'1.0-0' }} <small>{{ unit }}</small></div>
-    </div>
-    
-    <div class="info-card tare">
-      <div class="card-label">TARA</div>
-      <div class="card-value">{{ tare | number:'1.0-0' }} <small>{{ unit }}</small></div>
-    </div>
-    
-    <div class="info-card net">
-      <div class="card-label">NETO</div>
-      <div class="card-value highlight">{{ net | number:'1.0-0' }} <small>{{ unit }}</small></div>
-    </div>
-
-    <!-- Botones de Acción Operativa -->
-    <div class="action-grid">
-      <button class="btn btn-primary" (click)="onTarar()">TARAR</button>
-      <button class="btn btn-secondary" (click)="onCero()">CERO</button>
-      <button class="btn btn-success" (click)="onImprimir()">IMPRIMIR</button>
-      <button class="btn btn-danger" (click)="onCancelar()">CANCELAR</button>
-    </div>
-  </div>
-<!-- Tabla de Transacciones Recientes (Abajo) -->
-<div class="transactions-panel">
-  <div class="panel-header">
-    <div class="header-left">
-      <h3>Últimas Transacciones</h3>
-      <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
-        <mat-label>Filtrar historial</mat-label>
-        <input matInput (keyup)="applyFilter($event)" placeholder="Ej: Folio, Cliente, Chofer o Placa" #input>
-        <mat-icon matPrefix>search</mat-icon>
-      </mat-form-field>
-    </div>
-    <button mat-flat-button color="accent" class="btn-refresh" (click)="cargarDatos()">
-      <mat-icon>refresh</mat-icon> Actualizar
-    </button>
-  </div>
-
-  <div class="table-container">
-    <table mat-table [dataSource]="dataSource" class="mat-elevation-z0">
-...
-        <!-- Definición de Columnas para mat-table -->
-        <ng-container matColumnDef="codigoEntrada">
-          <th mat-header-cell *matHeaderCellDef> Folio </th>
-          <td mat-cell *matCellDef="let t"> <strong>#{{ t.folio  }}</strong> </td>
-        </ng-container>
-
-        <ng-container matColumnDef="cliente">
-          <th mat-header-cell *matHeaderCellDef> Cliente </th>
-          <td mat-cell *matCellDef="let t"> {{ t.cliente }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="nombre_chofer">
-          <th mat-header-cell *matHeaderCellDef> Chofer </th>
-          <td mat-cell *matCellDef="let t"> {{ t.chofer }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="tara">
-          <th mat-header-cell *matHeaderCellDef> Tara (kg) </th>
-          <td mat-cell *matCellDef="let t"> {{ t.tara | number }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="bruto">
-          <th mat-header-cell *matHeaderCellDef> Bruto (kg) </th>
-          <td mat-cell *matCellDef="let t"> {{ (t.bruto || 0) | number }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="neto">
-          <th mat-header-cell *matHeaderCellDef> Neto (kg) </th>
-          <td mat-cell *matCellDef="let t"> <strong class="text-success">{{ (t.neto || 0) | number }}</strong> </td>
-        </ng-container>
-
-        <ng-container matColumnDef="fecha">
-          <th mat-header-cell *matHeaderCellDef> Fecha </th>
-          <td mat-cell *matCellDef="let t"> {{ t.fecha | date:'short' }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="estado">
-          <th mat-header-cell *matHeaderCellDef> Estado </th>
-          <td mat-cell *matCellDef="let t">
-            <span class="status-indicator" [class.completed]="t.estado === 'completado'" [class.pending]="t.estado === 'pendiente'">
-              {{ t.estado === 'completado' ? 'COMPLETADO' : 'SIN REGISTRAR SALIDA' }}
-            </span>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="acciones">
-          <th mat-header-cell *matHeaderCellDef> Acciones </th>
-          <td mat-cell *matCellDef="let t">
-            <button class="btn-icon finish" *ngIf="t.estado === 'pendiente'" (click)="onFinalizarSalida(t)" title="Completar Salida">✅</button>
-            <button class="btn-icon" (click)="viewTransaction(t)" title="Ver Detalle">👁️</button>
-            <button class="btn-icon" (click)="printTransaction(t)" title="Reimprimir">🖨️</button>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones']"></tr>
-        <tr mat-row *matRowDef="let row; columns: ['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones'];"></tr>
-      </table>
-
-      <div class="no-data" *ngIf="recentTransactions.length === 0">
-        No hay transacciones registradas.
+<div class="scale-page">
+  <!-- Encabezado de Terminal -->
+  <header class="terminal-header">
+    <div class="terminal-title-group">
+      <div class="terminal-icon-box">
+        <mat-icon>scale</mat-icon>
+      </div>
+      <div>
+        <h1>Terminal de Pesaje</h1>
+        <p class="terminal-subtitle">Plataforma Camionera #01 · Monitoreo de Carga</p>
       </div>
     </div>
+
+    <div class="terminal-meta">
+      <div class="meta-pill">
+        <span class="meta-label">En Planta</span>
+        <span class="meta-value">{{ enPlantaCount }}</span>
+      </div>
+      <div class="meta-pill">
+        <span class="meta-label">Registros</span>
+        <span class="meta-value">{{ recentTransactions.length }}</span>
+      </div>
+      <div class="connection-pill">
+        <span class="pulse-dot"></span>
+        <span>INDICADOR EN LÍNEA</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="scale-container">
+    <!-- Panel de Indicador de Peso (Izquierda) -->
+    <section class="weight-panel">
+      <div class="indicator-top-bar">
+        <div class="indicator-brand">
+          <mat-icon>memory</mat-icon>
+          <span>INDICADOR DIGITAL · CH-01</span>
+        </div>
+        <span class="indicator-mode" [class.mode-exit]="tare > 0">
+          {{ tare > 0 ? 'MODO SALIDA' : 'MODO ENTRADA' }}
+        </span>
+      </div>
+
+      <div class="indicator-screen">
+        <div class="screen-header">
+          <span class="indicator-label">LECTURA DE PLATAFORMA</span>
+          <span class="screen-scale-spec">CAP. 80,000 kg · d = 10 kg</span>
+        </div>
+
+        <div class="indicator-display" [class.is-zero]="currentWeight === 0">
+          <span class="weight-value">{{ currentWeight | number:'1.0-0' }}</span>
+          <span class="weight-unit">{{ unit }}</span>
+        </div>
+
+        <div class="indicator-status">
+          <div class="status-badge" [class.active]="currentWeight > 0">
+            <span class="led"></span>
+            <span>ESTABLE</span>
+          </div>
+          <div class="status-badge" [class.active]="currentWeight === 0">
+            <span class="led"></span>
+            <span>CENTRO DE CERO</span>
+          </div>
+          <div class="status-badge tare-led" [class.active]="tare > 0">
+            <span class="led"></span>
+            <span>NETO / TARA FIJA</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Consola de Control Operativo (Derecha) -->
+    <section class="operational-panel">
+      <div class="console-header">
+        <span class="console-title">CONSOLA DE OPERACIÓN</span>
+        <span class="console-hint">Valores en kilogramos (kg)</span>
+      </div>
+
+      <!-- Tarjetas de Desglose de Peso -->
+      <div class="metrics-grid">
+        <div class="metric-tile gross">
+          <div class="metric-header">
+            <span class="metric-label">PESO BRUTO</span>
+            <mat-icon class="metric-icon">local_shipping</mat-icon>
+          </div>
+          <div class="metric-value">
+            {{ gross | number:'1.0-0' }} <small>{{ unit }}</small>
+          </div>
+        </div>
+
+        <div class="metric-tile tare" [class.has-tare]="tare > 0">
+          <div class="metric-header">
+            <span class="metric-label">TARA</span>
+            <mat-icon class="metric-icon">balance</mat-icon>
+          </div>
+          <div class="metric-value">
+            {{ tare | number:'1.0-0' }} <small>{{ unit }}</small>
+          </div>
+        </div>
+
+        <div class="metric-tile net">
+          <div class="net-left">
+            <span class="metric-label">PESO NETO CALCULADO</span>
+            <span class="net-formula">Diferencia Bruto − Tara</span>
+          </div>
+          <div class="metric-value highlight">
+            {{ net | number:'1.0-0' }} <small>{{ unit }}</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="console-divider"></div>
+
+      <!-- Teclado de Mando Operativo -->
+      <div class="controls-section">
+        <span class="controls-label">CONTROLES DE BÁSCULA</span>
+
+        <div class="instrument-keys">
+          <button type="button" class="key-btn key-neutral" (click)="onTarar()">
+            <div class="key-icon-wrap">
+              <mat-icon>content_cut</mat-icon>
+            </div>
+            <div class="key-text">
+              <span class="key-title">TARAR</span>
+              <span class="key-sub">Fijar peso actual</span>
+            </div>
+          </button>
+
+          <button type="button" class="key-btn key-neutral" (click)="onCero()">
+            <div class="key-icon-wrap">
+              <mat-icon>exposure_zero</mat-icon>
+            </div>
+            <div class="key-text">
+              <span class="key-title">CERO</span>
+              <span class="key-sub">Reiniciar lectura</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="primary-actions">
+          <button type="button" class="key-btn key-primary" (click)="onImprimir()">
+            <div class="key-primary-left">
+              <mat-icon>print</mat-icon>
+              <div class="key-text">
+                <span class="key-title">REGISTRAR E IMPRIMIR</span>
+                <span class="key-sub">{{ tare > 0 ? 'Generar ticket de salida' : 'Generar ticket de entrada' }}</span>
+              </div>
+            </div>
+            <mat-icon class="key-arrow">arrow_forward</mat-icon>
+          </button>
+
+          <button type="button" class="key-btn key-cancel" (click)="onCancelar()">
+            <mat-icon>restart_alt</mat-icon>
+            <span>Cancelar y limpiar operación</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabla de Transacciones Recientes (Abajo) -->
+    <section class="transactions-panel">
+      <div class="panel-header">
+        <div class="header-left">
+          <div class="title-with-count">
+            <h3>Últimas Transacciones</h3>
+            <span class="count-chip">{{ dataSource.filteredData.length }} registros</span>
+          </div>
+          <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+            <mat-label>Filtrar historial</mat-label>
+            <input matInput (keyup)="applyFilter($event)" placeholder="Folio, Cliente, Chofer o Placa..." #input>
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+        </div>
+        <button type="button" class="btn-refresh" (click)="cargarDatos()">
+          <mat-icon>refresh</mat-icon>
+          <span>Actualizar</span>
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" class="transactions-table">
+          <!-- Folio -->
+          <ng-container matColumnDef="codigoEntrada">
+            <th mat-header-cell *matHeaderCellDef> Folio </th>
+            <td mat-cell *matCellDef="let t">
+              <span class="folio-badge">#{{ t.folio }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Cliente -->
+          <ng-container matColumnDef="cliente">
+            <th mat-header-cell *matHeaderCellDef> Cliente / Proveedor </th>
+            <td mat-cell *matCellDef="let t">
+              <span class="cell-primary">{{ t.cliente }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Chofer -->
+          <ng-container matColumnDef="nombre_chofer">
+            <th mat-header-cell *matHeaderCellDef> Chofer </th>
+            <td mat-cell *matCellDef="let t">
+              <span class="cell-secondary">{{ t.chofer }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Tara -->
+          <ng-container matColumnDef="tara">
+            <th mat-header-cell *matHeaderCellDef class="num-col"> Tara (kg) </th>
+            <td mat-cell *matCellDef="let t" class="num-col">
+              <span class="mono-num">{{ t.tara | number }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Bruto -->
+          <ng-container matColumnDef="bruto">
+            <th mat-header-cell *matHeaderCellDef class="num-col"> Bruto (kg) </th>
+            <td mat-cell *matCellDef="let t" class="num-col">
+              <span class="mono-num" [class.muted-num]="!t.bruto">{{ (t.bruto || 0) | number }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Neto -->
+          <ng-container matColumnDef="neto">
+            <th mat-header-cell *matHeaderCellDef class="num-col"> Neto (kg) </th>
+            <td mat-cell *matCellDef="let t" class="num-col">
+              <span class="mono-num net-num" [class.muted-num]="!t.neto">{{ (t.neto || 0) | number }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Fecha -->
+          <ng-container matColumnDef="fecha">
+            <th mat-header-cell *matHeaderCellDef> Fecha </th>
+            <td mat-cell *matCellDef="let t" class="date-cell">
+              {{ t.fecha | date:'dd/MM/yyyy HH:mm' }}
+            </td>
+          </ng-container>
+
+          <!-- Estado -->
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef> Estado </th>
+            <td mat-cell *matCellDef="let t">
+              <span class="status-indicator" [class.completed]="t.estado === 'completado'" [class.pending]="t.estado === 'pendiente'">
+                <span class="status-dot"></span>
+                {{ t.estado === 'completado' ? 'Completado' : 'En Planta · Sin Salida' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Acciones -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef class="actions-col"> Acciones </th>
+            <td mat-cell *matCellDef="let t" class="actions-col">
+              <div class="action-buttons">
+                <button type="button" class="action-icon-btn finish" *ngIf="t.estado === 'pendiente'"
+                        (click)="onFinalizarSalida(t)" matTooltip="Registrar peso de salida">
+                  <mat-icon>flag</mat-icon>
+                  <span>Cerrar Salida</span>
+                </button>
+                <button type="button" class="action-icon-btn" (click)="viewTransaction(t)" matTooltip="Ver comprobante">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button type="button" class="action-icon-btn" (click)="printTransaction(t)" matTooltip="Reimprimir ticket">
+                  <mat-icon>print</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['codigoEntrada', 'cliente', 'nombre_chofer', 'tara', 'bruto', 'neto', 'fecha', 'estado', 'acciones'];"></tr>
+        </table>
+
+        <div class="no-data" *ngIf="recentTransactions.length === 0">
+          <mat-icon>scale</mat-icon>
+          <p>No hay transacciones registradas en este turno.</p>
+        </div>
+      </div>
+    </section>
   </div>
 </div>

@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { MAT_SNACK_BAR_DATA, MatSnackBarRef } from '@angular/material/snack-bar';
 
 export type NotificationType = 'success' | 'error' | 'info';
@@ -15,15 +14,17 @@ export interface NotificationData {
 @Component({
   selector: 'app-notification',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule],
+  imports: [CommonModule, MatIconModule],
   template: `
     <div class="notification" [ngClass]="data.type" role="status">
-      <mat-icon class="leading-icon">{{ icons[data.type] }}</mat-icon>
+      <div class="icon-badge">
+        <mat-icon>{{ icons[data.type] }}</mat-icon>
+      </div>
       <div class="content">
         <span class="message">{{ data.message }}</span>
         <span class="detail" *ngIf="data.detail">{{ data.detail }}</span>
       </div>
-      <button mat-icon-button class="close-btn" (click)="close()" aria-label="Cerrar notificación">
+      <button type="button" class="close-btn" (click)="close()" aria-label="Cerrar notificación">
         <mat-icon>close</mat-icon>
       </button>
     </div>
@@ -32,32 +33,50 @@ export interface NotificationData {
     :host { display: block; }
 
     .notification {
+      font-family: 'Inter', sans-serif;
       display: flex;
       align-items: center;
-      gap: 14px;
-      min-width: 320px;
+      gap: 12px;
+      min-width: 330px;
       max-width: 440px;
-      padding: 14px 12px 14px 16px;
-      background: var(--surface);
+      padding: 13px 14px;
+      background: #0f172a;
+      border: 1px solid #334155;
       border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
-      border-left: 5px solid var(--brand-primary);
+      box-shadow: 0 14px 30px -6px rgba(15, 23, 42, 0.45);
+      color: #f8fafc;
     }
 
-    .leading-icon {
+    .icon-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
-      font-size: 26px;
-      width: 26px;
-      height: 26px;
-      color: var(--brand-primary);
+      background: rgba(59, 130, 246, 0.14);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      color: #60a5fa;
+
+      mat-icon {
+        font-size: 19px;
+        width: 19px;
+        height: 19px;
+      }
     }
 
-    .notification.success { border-left-color: var(--color-success); }
-    .notification.success .leading-icon { color: var(--color-success); }
-    .notification.error { border-left-color: var(--color-danger); }
-    .notification.error .leading-icon { color: var(--color-danger); }
-    .notification.info { border-left-color: var(--brand-primary); }
-    .notification.info .leading-icon { color: var(--brand-primary); }
+    .notification.success .icon-badge {
+      background: rgba(16, 185, 129, 0.14);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+
+    .notification.error .icon-badge {
+      background: rgba(244, 63, 94, 0.15);
+      border-color: rgba(244, 63, 94, 0.38);
+      color: #fb7185;
+    }
 
     .content {
       display: flex;
@@ -65,28 +84,42 @@ export interface NotificationData {
       flex: 1;
       min-width: 0;
     }
+
     .message {
       font-weight: 600;
-      font-size: 0.95rem;
-      color: var(--text-strong);
+      font-size: 0.88rem;
+      color: #ffffff;
       line-height: 1.3;
     }
+
     .detail {
       margin-top: 2px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      color: #94a3b8;
     }
 
     .close-btn {
       flex-shrink: 0;
-      color: var(--text-faint);
-      width: 32px;
-      height: 32px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: #64748b;
+      width: 28px;
+      height: 28px;
       padding: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #f8fafc;
+      }
+
+      mat-icon { font-size: 16px; width: 16px; height: 16px; }
     }
   `]
 })
@@ -96,7 +129,7 @@ export class NotificationComponent {
 
   readonly icons: Record<NotificationType, string> = {
     success: 'check_circle',
-    error: 'error',
+    error: 'error_outline',
     info: 'info',
   };
 

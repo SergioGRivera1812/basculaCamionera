@@ -1,55 +1,82 @@
-<div class="login-container">
-  <mat-card class="login-card">
-    <div class="brand">
-      <div class="brand-badge">
-        <mat-icon>balance</mat-icon>
+<div class="login-page">
+  <div class="login-card">
+    <!-- Cabecera Oscura de Marca -->
+    <header class="card-header">
+      <div class="brand-row">
+        <div class="brand-badge">
+          <mat-icon>balance</mat-icon>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">BASCU-SYS</span>
+          <span class="brand-sub">BÁSCULA CAMIONERA CENTRAL</span>
+        </div>
       </div>
-      <h1 class="brand-name">BASCU-SYS</h1>
-      <p class="brand-subtitle">Sistema de Báscula Camionera</p>
-    </div>
+      <span class="online-pill">
+        <span class="dot"></span>
+        ACTIVO
+      </span>
+    </header>
 
-    <mat-card-content>
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <!-- Cuerpo del Formulario -->
+    <div class="card-body">
+      <div class="welcome-block">
+        <h1>Iniciar Sesión</h1>
+        <p>Ingresa tu cuenta de operador o administrador</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Usuario</mat-label>
           <input matInput type="text" formControlName="usuario" autocomplete="username"
-                 placeholder="Tu nombre de usuario" />
-          <mat-icon matSuffix>person</mat-icon>
+                 placeholder="Nombre de usuario" />
+          <mat-icon matPrefix>person_outline</mat-icon>
           <mat-error *ngIf="loginForm.get('usuario')?.hasError('required')">
-            El usuario es <strong>obligatorio</strong>.
+            El usuario es obligatorio.
           </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Contraseña</mat-label>
           <input matInput [type]="hidePassword() ? 'password' : 'text'"
-                 formControlName="password" autocomplete="current-password" />
+                 formControlName="password" autocomplete="current-password"
+                 placeholder="Contraseña" />
+          <mat-icon matPrefix>lock_outline</mat-icon>
           <button mat-icon-button matSuffix type="button" (click)="togglePassword()"
                   [attr.aria-label]="hidePassword() ? 'Mostrar contraseña' : 'Ocultar contraseña'"
                   [attr.aria-pressed]="!hidePassword()">
             <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
           <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
-            La contraseña es <strong>obligatoria</strong>.
+            La contraseña es obligatoria.
           </mat-error>
           <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">
-            La contraseña debe tener al menos <strong>6 caracteres</strong>.
+            Mínimo 6 caracteres.
           </mat-error>
         </mat-form-field>
 
-        <div *ngIf="errorMessage()" class="error-message" role="alert">
+        <div *ngIf="errorMessage()" class="error-banner" role="alert">
           <mat-icon>error_outline</mat-icon>
           <span>{{ errorMessage() }}</span>
         </div>
 
-        <button mat-raised-button color="primary" type="submit"
-                class="full-width login-button"
-                [disabled]="loginForm.invalid || isLoading()">
-          <mat-spinner *ngIf="isLoading()" diameter="22" class="btn-spinner"></mat-spinner>
-          <span *ngIf="!isLoading()">Ingresar</span>
-          <span *ngIf="isLoading()">Validando…</span>
+        <button type="submit" class="btn-submit" [disabled]="loginForm.invalid || isLoading()">
+          <ng-container *ngIf="!isLoading()">
+            <span>INGRESAR AL SISTEMA</span>
+            <mat-icon class="btn-arrow">arrow_forward</mat-icon>
+          </ng-container>
+
+          <ng-container *ngIf="isLoading()">
+            <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+            <span>VALIDANDO…</span>
+          </ng-container>
         </button>
       </form>
-    </mat-card-content>
-  </mat-card>
+    </div>
+
+    <!-- Pie de Tarjeta -->
+    <footer class="card-footer">
+      <mat-icon>lock</mat-icon>
+      <span>Terminal de Pesaje · Acceso Autorizado</span>
+    </footer>
+  </div>
 </div>

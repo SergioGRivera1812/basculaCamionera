@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { Cliente } from '../../../../models/database.models';
 
 @Component({
@@ -16,45 +16,166 @@ import { Cliente } from '../../../../models/database.models';
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
-    MatButtonModule
+    MatIconModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ data ? 'Editar' : 'Nuevo' }} Cliente</h2>
-    <mat-dialog-content>
-      <form [formGroup]="form" class="client-form">
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre / Razón Social</mat-label>
-          <input matInput formControlName="nombre" placeholder="Nombre completo">
-          <mat-error *ngIf="form.get('nombre')?.hasError('required')">El nombre es requerido</mat-error>
-        </mat-form-field>
+    <div class="modal-shell">
+      <header class="modal-header">
+        <div class="header-left">
+          <div class="modal-icon">
+            <mat-icon>business</mat-icon>
+          </div>
+          <div>
+            <h2>{{ data ? 'Editar Cliente' : 'Nuevo Cliente' }}</h2>
+            <span class="subtitle">Catálogo de clientes y proveedores</span>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Cerrar">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Contacto</mat-label>
-          <input matInput formControlName="contacto" placeholder="Nombre de contacto">
-        </mat-form-field>
+      <div class="modal-body">
+        <form [formGroup]="form" class="modal-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre / Razón Social</mat-label>
+            <input matInput formControlName="nombre" placeholder="Ej: Agroindustrias del Norte S.A.">
+            <mat-icon matPrefix>apartment</mat-icon>
+            <mat-error *ngIf="form.get('nombre')?.hasError('required')">El nombre o razón social es obligatorio</mat-error>
+          </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Teléfono</mat-label>
-          <input matInput formControlName="telefono" placeholder="Ej: 1234567890">
-        </mat-form-field>
-      </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button (click)="onCancel()">Cancelar</button>
-      <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="onSave()">
-        {{ data ? 'Actualizar' : 'Guardar' }}
-      </button>
-    </mat-dialog-actions>
+          <mat-form-field appearance="outline">
+            <mat-label>Persona de Contacto</mat-label>
+            <input matInput formControlName="contacto" placeholder="Nombre del representante">
+            <mat-icon matPrefix>person_outline</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input matInput formControlName="telefono" placeholder="Ej: 662 123 4567">
+            <mat-icon matPrefix>call</mat-icon>
+          </mat-form-field>
+        </form>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="onCancel()">Cancelar</button>
+        <button type="button" class="btn-primary" [disabled]="form.invalid" (click)="onSave()">
+          <mat-icon>check</mat-icon>
+          <span>{{ data ? 'Guardar Cambios' : 'Registrar Cliente' }}</span>
+        </button>
+      </footer>
+    </div>
   `,
   styles: [`
-    .client-form {
+    .modal-shell {
+      font-family: 'Inter', sans-serif;
+      background: #ffffff;
+      color: #0f172a;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 22px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .modal-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: #0f172a;
+        color: #60a5fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        mat-icon { font-size: 20px; width: 20px; height: 20px; }
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.2;
+      }
+
+      .subtitle {
+        font-size: 0.76rem;
+        color: #64748b;
+      }
+
+      .close-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #64748b;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        &:hover { background: #e2e8f0; color: #0f172a; }
+        mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      }
+    }
+    .modal-body {
+      padding: 22px 22px 10px;
+    }
+    .modal-form {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      padding-top: 10px;
-      min-width: 350px;
+      gap: 6px;
+      min-width: 340px;
+      mat-form-field { width: 100%; }
     }
-    mat-form-field { width: 100%; }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 14px 22px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+    }
+    .btn-secondary {
+      height: 38px;
+      padding: 0 16px;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      &:hover { background: #f1f5f9; color: #0f172a; }
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 38px;
+      padding: 0 18px;
+      border-radius: 8px;
+      background: #1e293b;
+      border: 1px solid #0f172a;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      mat-icon { font-size: 17px; width: 17px; height: 17px; color: #60a5fa; }
+      &:hover:not(:disabled) { background: #0f172a; }
+      &:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
   `]
 })
 export class ClientDialogComponent {

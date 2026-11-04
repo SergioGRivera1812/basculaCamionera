@@ -4,10 +4,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDividerModule } from '@angular/material/divider';
 import { ClientesService } from '../../../../services/clientes.service';
 import { ChoferesService } from '../../../../services/choferes.service';
 import { MaterialesService } from '../../../../services/materiales.service';
@@ -22,64 +20,66 @@ import { Cliente, Chofer, Material } from '../../../../models/database.models';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatButtonModule,
     MatSelectModule,
-    MatIconModule,
-    MatDividerModule
+    MatIconModule
   ],
   template: `
     <div class="dialog-wrapper">
       <header class="dialog-header">
         <div class="header-content">
-          <mat-icon [color]="data.type === 'entrada' ? 'primary' : 'warn'">
-            {{ data.type === 'entrada' ? 'login' : 'logout' }}
-          </mat-icon>
+          <div class="header-icon" [class.salida]="data.type === 'salida'">
+            <mat-icon>{{ data.type === 'entrada' ? 'login' : 'logout' }}</mat-icon>
+          </div>
           <div class="title-group">
-            <h2 mat-dialog-title>Captura de Pesaje</h2>
-            <span class="subtitle">{{ data.type === 'entrada' ? 'Registro de Entrada' : 'Registro de Salida' }}</span>
+            <h2>Captura de Pesaje</h2>
+            <span class="subtitle">{{ data.type === 'entrada' ? 'Registro de Entrada (1er Pesaje)' : 'Cierre de Salida (2do Pesaje)' }}</span>
           </div>
         </div>
-        <button mat-icon-button (click)="onCancel()"><mat-icon>close</mat-icon></button>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Cerrar">
+          <mat-icon>close</mat-icon>
+        </button>
       </header>
 
-      <mat-dialog-content class="dialog-body">
-        <div class="weight-card" [class.salida]="data.type === 'salida'">
-          <div class="main-weight">
-            <span class="label">PESO ACTUAL</span>
-            <div class="value">{{ data.weight | number }} <small>kg</small></div>
+      <div class="dialog-body">
+        <!-- Pantalla Digital de Lectura -->
+        <div class="weight-readout">
+          <div class="readout-main">
+            <span class="readout-label">{{ data.type === 'salida' ? 'PESO BRUTO DETECTADO' : 'TARA DETECTADA' }}</span>
+            <div class="readout-value">{{ data.weight | number:'1.0-0' }} <small>kg</small></div>
           </div>
-          <div class="weight-details" *ngIf="data.type === 'salida'">
-            <div class="detail-item">
-              <span>Tara</span>
-              <strong>{{ data.tare | number }} kg</strong>
+
+          <div class="readout-breakdown" *ngIf="data.type === 'salida'">
+            <div class="breakdown-item">
+              <span>Tara Entrada</span>
+              <strong>{{ (data.tare || 0) | number:'1.0-0' }} kg</strong>
             </div>
-            <div class="detail-item net-highlight">
-              <span>Neto</span>
-              <strong>{{ (data.weight - (data.tare || 0)) | number }} kg</strong>
+            <div class="breakdown-item net">
+              <span>Peso Neto</span>
+              <strong>{{ (data.weight - (data.tare || 0)) | number:'1.0-0' }} kg</strong>
             </div>
           </div>
         </div>
 
         <form [formGroup]="weighingForm" class="form-container">
           <div class="form-section">
-            <h3 class="section-title"><mat-icon>local_shipping</mat-icon> Información del Vehículo</h3>
+            <h3 class="section-title"><mat-icon>local_shipping</mat-icon> Identificación de Unidad</h3>
             <div class="grid-row">
               <mat-form-field appearance="outline">
                 <mat-label>Folio Manual (Opcional)</mat-label>
-                <input matInput formControlName="codigoEntrada" type="number" placeholder="Ej: 54321">
+                <input matInput formControlName="codigoEntrada" type="number" placeholder="Autogenerado">
                 <mat-icon matPrefix>tag</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>Placa</mat-label>
+                <mat-label>Placa del Camión</mat-label>
                 <input matInput formControlName="plate" placeholder="ABC-123" class="uppercase">
                 <mat-icon matPrefix>badge</mat-icon>
-                <mat-error *ngIf="weighingForm.get('plate')?.invalid">La placa es requerida</mat-error>
+                <mat-error *ngIf="weighingForm.get('plate')?.invalid">La placa es obligatoria</mat-error>
               </mat-form-field>
             </div>
-            <div class="grid-row">
+            <div class="single-row">
               <mat-form-field appearance="outline">
-                <mat-label>Chofer</mat-label>
+                <mat-label>Operador / Chofer</mat-label>
                 <mat-select formControlName="driver">
                   <mat-option *ngFor="let c of choferes" [value]="c.nombre">{{ c.nombre }}</mat-option>
                 </mat-select>
@@ -89,10 +89,10 @@ import { Cliente, Chofer, Material } from '../../../../models/database.models';
             </div>
           </div>
 
-          <mat-divider></mat-divider>
+          <div class="section-divider"></div>
 
           <div class="form-section">
-            <h3 class="section-title"><mat-icon>business</mat-icon> Datos Comerciales</h3>
+            <h3 class="section-title"><mat-icon>business</mat-icon> Datos Comerciales y Carga</h3>
             <div class="grid-row">
               <mat-form-field appearance="outline">
                 <mat-label>Cliente / Proveedor</mat-label>
@@ -104,7 +104,7 @@ import { Cliente, Chofer, Material } from '../../../../models/database.models';
               </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>Material</mat-label>
+                <mat-label>Material / Producto</mat-label>
                 <mat-select formControlName="product_id">
                   <mat-option *ngFor="let m of materiales" [value]="m.id">{{ m.nombre }}</mat-option>
                 </mat-select>
@@ -115,78 +115,191 @@ import { Cliente, Chofer, Material } from '../../../../models/database.models';
           </div>
 
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Observaciones</mat-label>
+            <mat-label>Observaciones Operativas</mat-label>
             <textarea matInput formControlName="notes" placeholder="Notas adicionales del pesaje..." rows="2"></textarea>
             <mat-icon matPrefix>notes</mat-icon>
           </mat-form-field>
         </form>
-      </mat-dialog-content>
+      </div>
 
-      <mat-dialog-actions align="end" class="dialog-footer">
-        <button mat-button (click)="onCancel()" class="btn-cancel">CANCELAR</button>
-        <button mat-raised-button color="primary" class="btn-save"
-                [disabled]="weighingForm.invalid" 
-                (click)="onSave()">
-          <mat-icon>print</mat-icon> GUARDAR E IMPRIMIR
+      <footer class="dialog-footer">
+        <button type="button" class="btn-cancel" (click)="onCancel()">Cancelar</button>
+        <button type="button" class="btn-save" [disabled]="weighingForm.invalid" (click)="onSave()">
+          <mat-icon>print</mat-icon>
+          <span>GUARDAR E IMPRIMIR</span>
         </button>
-      </mat-dialog-actions>
+      </footer>
     </div>
   `,
   styles: [`
-    .dialog-wrapper { overflow: hidden; border-radius: 12px; }
-    .dialog-header { 
-      padding: 16px 24px; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      background: #fdfdfd; 
-      border-bottom: 1px solid #eee;
-      .header-content { display: flex; align-items: center; gap: 16px; }
-      .title-group { 
-        h2 { margin: 0; font-size: 1.25rem; font-weight: 600; color: #1e293b; }
-        .subtitle { font-size: 0.875rem; color: #64748b; }
-      }
-      mat-icon { font-size: 28px; width: 28px; height: 28px; }
+    .dialog-wrapper {
+      font-family: 'Inter', sans-serif;
+      background: #ffffff;
+      color: #0f172a;
     }
-    .dialog-body { padding: 24px !important; }
-    .weight-card { 
-      background: #eff6ff; 
-      border-radius: 12px; 
-      padding: 20px; 
-      margin-bottom: 24px; 
-      display: flex; 
+    .dialog-header {
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+
+      .header-content {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .header-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: #0f172a;
+        color: #60a5fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        &.salida { color: #34d399; }
+        mat-icon { font-size: 21px; width: 21px; height: 21px; }
+      }
+
+      .title-group {
+        h2 { margin: 0; font-size: 1.08rem; font-weight: 700; color: #0f172a; line-height: 1.2; }
+        .subtitle { font-size: 0.78rem; color: #64748b; }
+      }
+
+      .close-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: #64748b;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        &:hover { background: #e2e8f0; color: #0f172a; }
+        mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      }
+    }
+
+    .dialog-body {
+      padding: 20px 24px 12px;
+      max-height: 75vh;
+      overflow-y: auto;
+    }
+
+    .weight-readout {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 18px;
+      display: flex;
       align-items: center;
       justify-content: space-between;
-      border: 1px solid #dbeafe;
-      &.salida { background: #fff1f2; border-color: #ffe4e6; .main-weight .value { color: #e11d48; } }
-      .main-weight { 
-        .label { font-size: 0.75rem; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.05em; }
-        .value { font-size: 2.5rem; font-weight: 800; color: #1d4ed8; line-height: 1; margin-top: 4px; small { font-size: 1.25rem; } }
-      }
-      .weight-details { 
-        display: flex; gap: 24px; text-align: right;
-        .detail-item { 
-          display: flex; flex-direction: column; 
-          span { font-size: 0.75rem; color: #64748b; }
-          strong { font-size: 1.1rem; color: #1e293b; }
+      gap: 16px;
+
+      .readout-main {
+        .readout-label {
+          font-size: 0.68rem;
+          font-weight: 700;
+          color: #94a3b8;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
         }
-        .net-highlight strong { color: #10b981; }
+        .readout-value {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 2.1rem;
+          font-weight: 800;
+          color: #34d399;
+          line-height: 1.1;
+          margin-top: 2px;
+          small { font-size: 1rem; color: #64748b; font-weight: 600; }
+        }
+      }
+
+      .readout-breakdown {
+        display: flex;
+        gap: 18px;
+        text-align: right;
+        border-left: 1px solid #334155;
+        padding-left: 18px;
+
+        .breakdown-item {
+          display: flex;
+          flex-direction: column;
+          span { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; }
+          strong { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: #e2e8f0; margin-top: 2px; }
+          &.net strong { color: #ffffff; font-size: 1.15rem; }
+        }
       }
     }
-    .form-section { padding: 16px 0; }
-    .section-title { 
-      display: flex; align-items: center; gap: 8px; 
-      font-size: 0.9rem; font-weight: 600; color: #64748b; 
-      margin-bottom: 16px; 
-      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+    .form-section { padding: 6px 0; }
+    .section-divider { height: 1px; background: #f1f5f9; margin: 4px 0 10px; }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 12px;
+      mat-icon { font-size: 17px; width: 17px; height: 17px; color: #64748b; }
     }
-    .grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .full-width { width: 100%; margin-top: 16px; }
-    .uppercase { text-transform: uppercase; }
-    .dialog-footer { padding: 16px 24px; border-top: 1px solid #eee; gap: 12px; }
-    .btn-save { padding: 0 24px; height: 44px; font-weight: 600; }
+    .grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .single-row { width: 100%; }
+    .full-width { width: 100%; margin-top: 4px; }
+    .uppercase { text-transform: uppercase; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
     mat-form-field { width: 100%; }
-    ::ng-deep .mat-mdc-dialog-container { padding: 0 !important; }
+
+    .dialog-footer {
+      padding: 14px 24px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .btn-cancel {
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      &:hover { background: #f1f5f9; color: #0f172a; }
+    }
+
+    .btn-save {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 20px;
+      border-radius: 8px;
+      background: #1e293b;
+      border: 1px solid #0f172a;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      mat-icon { font-size: 18px; width: 18px; height: 18px; color: #60a5fa; }
+      &:hover:not(:disabled) { background: #0f172a; }
+      &:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
   `]
 })
 export class WeighingFormDialogComponent implements OnInit {

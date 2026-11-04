@@ -14,12 +14,17 @@ import { AuthService } from '../../services/auth.service';
   template: `
     <div class="sidebar" [class.collapsed]="isCollapsed">
       <div class="logo-container">
-        <mat-icon class="logo-icon">balance</mat-icon>
-        <span class="logo-text" *ngIf="!isCollapsed">BASCU-SYS</span>
+        <div class="logo-badge">
+          <mat-icon class="logo-icon">balance</mat-icon>
+        </div>
+        <div class="logo-text-group" *ngIf="!isCollapsed">
+          <span class="logo-text">BASCU-SYS</span>
+          <span class="logo-subtext">CONTROL INDUSTRIAL</span>
+        </div>
       </div>
 
       <div class="toggle-container">
-        <button mat-icon-button (click)="toggleSidebar()" class="toggle-btn">
+        <button mat-icon-button (click)="toggleSidebar()" class="toggle-btn" aria-label="Alternar menú">
           <mat-icon>{{ isCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
         </button>
       </div>
@@ -80,31 +85,77 @@ import { AuthService } from '../../services/auth.service';
       width: 260px;
       height: 100vh;
       background-color: var(--brand-navy);
-      color: white;
+      color: #ffffff;
       display: flex;
       flex-direction: column;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      box-shadow: 2px 0 14px rgba(15, 23, 42, 0.18);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+
+      /* Forzar texto e íconos blancos en Angular Material MDC list items */
+      --mdc-list-list-item-label-text-color: #ffffff;
+      --mdc-list-list-item-hover-label-text-color: #ffffff;
+      --mdc-list-list-item-focus-label-text-color: #ffffff;
+      --mdc-list-list-item-leading-icon-color: rgba(255, 255, 255, 0.85);
+      --mdc-list-list-item-hover-leading-icon-color: #ffffff;
     }
 
     .sidebar.collapsed {
-      width: 70px;
+      width: 72px;
       .logo-container { padding: 20px 10px; justify-content: center; }
-      mat-nav-list a { margin: 5px 5px; justify-content: center; }
+      mat-nav-list a { margin: 6px 8px; justify-content: center; }
     }
 
     .logo-container {
-      padding: 30px 20px;
+      padding: 24px 20px;
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 14px;
       background-color: var(--brand-dark);
       overflow: hidden;
       white-space: nowrap;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
-      .logo-icon { font-size: 2.5rem; width: 40px; height: 40px; color: var(--brand-accent); flex-shrink: 0; }
-      .logo-text { font-size: 1.5rem; font-weight: bold; letter-spacing: 1px; }
+      .logo-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(59, 130, 246, 0.16);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .logo-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        color: #60a5fa;
+      }
+
+      .logo-text-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .logo-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: #ffffff;
+        line-height: 1.15;
+      }
+
+      .logo-subtext {
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        color: rgba(255, 255, 255, 0.55);
+        margin-top: 2px;
+      }
     }
 
     .toggle-container {
@@ -113,19 +164,19 @@ import { AuthService } from '../../services/auth.service';
       padding: 5px;
       position: absolute;
       right: -15px;
-      top: 75px;
+      top: 72px;
       z-index: 10;
     }
 
     .toggle-btn {
       background-color: var(--brand-accent);
-      color: white;
+      color: #ffffff;
       width: 30px;
       height: 30px;
       padding: 0;
       line-height: normal;
       border-radius: 50%;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -137,9 +188,9 @@ import { AuthService } from '../../services/auth.service';
         height: 20px;
         line-height: 20px;
         margin: 0;
+        color: #ffffff;
       }
 
-      // El "touch target" de Material (48px, absoluto) puede descentrar el contenido.
       ::ng-deep .mat-mdc-button-touch-target {
         width: 30px;
         height: 30px;
@@ -147,24 +198,46 @@ import { AuthService } from '../../services/auth.service';
     }
 
     mat-nav-list {
-      padding-top: 10px;
+      padding-top: 14px;
       a {
-        color: var(--sidebar-text);
-        margin: 5px 10px;
-        border-radius: 8px;
-        height: 50px;
-        transition: all 0.2s;
+        color: #ffffff !important;
+        margin: 6px 12px;
+        border-radius: 10px;
+        height: 48px;
+        transition: all 0.2s ease;
         overflow: hidden;
+
+        ::ng-deep .mdc-list-item__primary-text {
+          color: #ffffff !important;
+          font-weight: 500;
+          font-size: 0.94rem;
+          letter-spacing: 0.01em;
+        }
+
+        mat-icon {
+          color: rgba(255, 255, 255, 0.85) !important;
+          flex-shrink: 0;
+          transition: color 0.2s ease;
+        }
         
-        &:hover { background-color: rgba(255, 255, 255, 0.05); color: white; }
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.08);
+          color: #ffffff !important;
+          mat-icon { color: #ffffff !important; }
+        }
         
         &.active-link {
           background-color: var(--brand-accent);
-          color: white;
-          mat-icon { color: white; }
-        }
+          color: #ffffff !important;
+          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 
-        mat-icon { color: var(--sidebar-text); flex-shrink: 0; }
+          ::ng-deep .mdc-list-item__primary-text {
+            color: #ffffff !important;
+            font-weight: 600;
+          }
+
+          mat-icon { color: #ffffff !important; }
+        }
       }
     }
 
@@ -174,29 +247,43 @@ import { AuthService } from '../../services/auth.service';
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 12px 20px;
+      padding: 14px 18px;
+      margin: 0 12px 8px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       overflow: hidden;
       white-space: nowrap;
 
       .user-avatar {
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
         flex-shrink: 0;
-        border-radius: 50%;
+        border-radius: 8px;
         background-color: var(--brand-accent);
-        color: white;
+        color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
+        font-size: 0.95rem;
       }
       .user-meta { display: flex; flex-direction: column; overflow: hidden; }
-      .user-name { font-size: 0.9rem; font-weight: 600; color: white; text-overflow: ellipsis; overflow: hidden; }
-      .user-role { font-size: 0.7rem; color: var(--brand-accent); letter-spacing: 0.5px; }
+      .user-name { font-size: 0.88rem; font-weight: 600; color: #ffffff; text-overflow: ellipsis; overflow: hidden; }
+      .user-role { font-size: 0.68rem; font-weight: 600; color: #93c5fd; letter-spacing: 0.06em; margin-top: 2px; }
     }
-    .sidebar.collapsed .user-info { justify-content: center; padding: 12px 10px; }
+    .sidebar.collapsed .user-info {
+      justify-content: center;
+      padding: 10px;
+      margin: 0 8px 8px;
+      background: transparent;
+      border-color: transparent;
+    }
 
-    .bottom-nav { border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 0; }
+    .bottom-nav {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 8px 0 12px;
+    }
     .logout-link { cursor: pointer; }
   `]
 })
